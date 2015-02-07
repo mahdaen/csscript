@@ -1,0 +1,30 @@
+{
+    "name": "CSSSCript",
+    "version": "0.0.1",
+    "description": "CSS inline script runner. Use javascript pattern to define css value.",
+    "keywords": [
+        "cssscript",
+        "javascript",
+        "css",
+        "less",
+        "sass"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mahdaen/cssscript.git"
+    },
+    "devDependencies": {
+        "grunt": "*",
+        "grunt-contrib-concat": "*",
+        "grunt-contrib-uglify": "*",
+        "grunt-contrib-watch": "*"
+    },
+    "license": "MIT",
+    "main": "Gruntfile.js",
+    "authors": [
+        {
+            "name": "Nanang Mahdaen El Agung",
+            "email": "mahdaen@gmail.com"
+        }
+    ]
+}
