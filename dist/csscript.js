@@ -1,5 +1,6 @@
 !function($) {
     "use strict";
+    window.CSScriptExtractAll = !1;
     var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\?\$\_\[\]]+\}?\}/g;
     $.ready(function() {
         initParser();
@@ -8,12 +9,13 @@
         $('link[rel="stylesheet"]').each(function() {
             var url = $(this).attr("href");
             if (isString(url)) $.get(url).success(function(cssString) {
-                ColectedCSS.push({
+                cssString.search(/\%\(/) < 0 && !CSScriptExtractAll || (ColectedCSS.push({
                     css: cssString,
                     url: url
-                }), $.renderCSScript();
+                }), $.renderCSScript());
             }); else {
                 var html = $(this).html();
+                if (html.search(/\%\(/) < 0) return;
                 html.length > 10 && (ColectedCSS.push({
                     css: html,
                     url: "local"
@@ -42,16 +44,18 @@
             if (cssBlocks) {
                 var cssStylesheet = new CSSStylesheet(url);
                 foreach(cssBlocks, function(csstr) {
-                    csstr.search("@") > -1 && (csstr += "}"), csstr = csstr.replace(/\n+/, "");
-                    var fst = csstr.slice(0, 1);
-                    if ("@" === fst) if (csstr.search("@media") > -1) {
-                        return;
-                    } else {
-                        if (csstr.search("@keyframes") > -1 || csstr.search("@-webkit-keyframes") > -1) return;
-                        if (csstr.search("@font-face") > -1) return;
-                    } else {
-                        var cssrule = new CSSStyleRule(csstr);
-                        parseRule(cssrule, csstr, !0), cssStylesheet.rules.push(cssrule);
+                    if (!(csstr.search(/\%\(/) < 0) || CSScriptExtractAll) {
+                        csstr.search("@") > -1 && (csstr += "}"), csstr = csstr.replace(/\n+/, "");
+                        var fst = csstr.slice(0, 1);
+                        if ("@" === fst) if (csstr.search("@media") > -1) {
+                            return;
+                        } else {
+                            if (csstr.search("@keyframes") > -1 || csstr.search("@-webkit-keyframes") > -1) return;
+                            if (csstr.search("@font-face") > -1) return;
+                        } else {
+                            var cssrule = new CSSStyleRule(csstr);
+                            parseRule(cssrule, csstr, !0), cssStylesheet.rules.push(cssrule);
+                        }
                     }
                 });
             }
@@ -135,14 +139,14 @@
             } catch (err) {}
             $props[key] = void 0 !== value ? value : null;
         }), $(this).css($props), this.defcssc || (this.defcssc = $props), $props;
-    }, CSSLists = function() {
+    }, CSScriptLists = function() {
         return this.length = 0, this;
     };
-    CSSLists.prototype = {
+    CSScriptLists.prototype = {
         push: function(obj) {
             return this[this.length] = obj, this.length = this.length + 1, this;
         }
-    }, window.CSSLists = new CSSLists();
+    }, window.CSScriptLists = new CSScriptLists();
     var CSSRuleList = function() {
         return this.length = 0, this;
     };
@@ -152,7 +156,7 @@
         }
     };
     var CSSStylesheet = function(url) {
-        return this.href = url, this.rules = new CSSRuleList(), window.CSSLists.push(this), 
+        return this.href = url, this.rules = new CSSRuleList(), window.CSScriptLists.push(this), 
         this;
     }, CSSStyleRule = function(csstring, selector) {
         return this.cssText = csstring, this.selector = selector, this.styles = new CSSStyleList(), 
@@ -174,4 +178,4 @@
             return this[key] = value, this;
         }
     };
-}(DOMList || jQuery);
+}(DOMList);

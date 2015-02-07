@@ -1,6 +1,9 @@
 (function($) {
     'use strict';
 
+    /* Config does all css parsed or only that contains CSScript */
+    window.CSScriptExtractAll = false;
+
     /* Reg Expression to Get CSS Block */
     var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\?\$\_\[\]]+\}?\}/g;
 
@@ -21,6 +24,8 @@
 
             if (isString(url)) {
                 $.get(url).success(function(cssString) {
+                    if (cssString.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
+
                     ColectedCSS.push({ css: cssString, url: url });
 
                     $.renderCSScript();
@@ -29,6 +34,8 @@
 
             else {
                 var html = $(this).html();
+
+                if (html.search(/\%\(/) < 0) return;
 
                 if (html.length > 10) {
                     ColectedCSS.push({ css: html, url: 'local'})
@@ -71,6 +78,9 @@
             var cssStylesheet = new CSSStylesheet(url);
 
             foreach(cssBlocks, function (csstr) {
+                /* Don't proceed if */
+                if (csstr.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
+
                 if (csstr.search('@') > -1) csstr += '}';
                 csstr = csstr.replace(/\n+/, '');
 
@@ -328,12 +338,12 @@
     };
 
     /* Creating CSSList Objects */
-    var CSSLists = function() {
+    var CSScriptLists = function() {
         this.length = 0;
 
         return this;
     }
-    CSSLists.prototype = {
+    CSScriptLists.prototype = {
         push: function(obj) {
             this[this.length] = obj;
             this.length = (this.length + 1);
@@ -341,7 +351,7 @@
             return this;
         }
     }
-    window.CSSLists = new CSSLists();
+    window.CSScriptLists = new CSScriptLists();
 
     /* Creating CSSList Objects */
     var CSSRuleList = function() {
@@ -363,7 +373,7 @@
         this.href = url;
         this.rules = new CSSRuleList();
 
-        window.CSSLists.push(this);
+        window.CSScriptLists.push(this);
 
         return this;
     }
@@ -412,4 +422,4 @@
             return this;
         }
     }
-})(DOMList || jQuery);
+})(DOMList);

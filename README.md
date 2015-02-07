@@ -10,6 +10,21 @@ To makes **CSS Script** working, you should load it after loading DOMList.
 
 Scripts should be inside `%()%` pattern. Currently we have param `$i` as index number of selected element.
 
+### **CONFIGS**
+By default, CSScript convert the CSSRule string to CSSRule object if contains CSScript pattern.
+If you want to convert all rules no matter they have CSScript pattern or not, please write config before loading the CSScript.
+
+###### Config sample
+```html
+	<script type="text/javascript">
+		window.CSScriptExtractAll = true;
+	</script>
+	<script type="text/javascript" src="csscript/dist/csscript.min.j"></script>
+```
+
+If you want to access the converted rules, you can read `window.CSScriptLists` object in browser console.
+
+
 #### **TODO**:
 * Add Media Query Support
 * Add Font Face Support
