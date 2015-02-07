@@ -8,7 +8,7 @@ To makes **CSS Script** working, you should load it after loading DOMList.
 ### **Syntax**
 >`cssproperty: '%(SCRIPT)%';`
 
-Scripts should be inside `%()%` pattern.
+Scripts should be inside `%()%` pattern. Currently we have param `$i` as index number of selected element.
 
 #### **TODO**:
 * Add Media Query Support
@@ -54,8 +54,14 @@ Scripts should be inside `%()%` pattern.
 	display: '%(window.innerWidth <= 320 ? "block" : "none")%';
 }
 
+// Using index number of li and log the index.
+ul .increased-height {
+	height: '%(($i * 10) - 5)%';
+	scripts: '%(console.log($i))%';
+}
+
 // Run javascripts.
-.container-content:hover {
+.container-content:click {
     scripts: '%($(".container").toggleClass("content-hovered"))%';
 }
 ```
