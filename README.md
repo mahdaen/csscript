@@ -2,7 +2,7 @@ CSS Script
 ====
 
 Inline `css` script runner. Use `javascript` to define `css` value or eval script directly via css.
-**CSS Script** is DOMList (https://github.com/mahdaen/domlist) extension.
+**CSS Script** is [DOMList](https://github.com/mahdaen/domlist) extension.
 To makes **CSS Script** working, you should load it after loading DOMList.
 
 ### **Syntax**
@@ -24,6 +24,15 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 
 If you want to access the converted rules, you can read `window.CSScriptLists` object in browser console.
 
+#### **Download**
+You can get `**CSScript**` by choosing download above or using:
+```
+npm install csscript
+```
+or
+```
+bower install csscript
+```
 
 #### **TODO**:
 * Add Media Query Support
