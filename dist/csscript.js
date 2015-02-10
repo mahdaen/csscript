@@ -1,7 +1,7 @@
 !function($) {
     "use strict";
     window.CSScriptExtractAll = !1;
-    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\?\$\_\[\]]+\}?\}/g;
+    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]]+\}/g;
     $.ready(function() {
         initParser();
     });
@@ -40,12 +40,13 @@
     });
     var extractBlocks = function(cssString, url) {
         if (isString(cssString)) {
+            cssString = cssString.replace(/\(\s?\{/g, "(!$").replace(/\}\s?\)/g, "$!)");
             var cssBlocks = cssString.match(RgxBlock);
             if (cssBlocks) {
                 var cssStylesheet = new CSSStylesheet(url);
                 foreach(cssBlocks, function(csstr) {
                     if (!(csstr.search(/\%\(/) < 0) || CSScriptExtractAll) {
-                        csstr.search("@") > -1 && (csstr += "}"), csstr = csstr.replace(/\n+/, "");
+                        csstr.search(/^\@/) > -1 && (csstr += "}"), csstr = csstr.replace(/\n+/, "");
                         var fst = csstr.slice(0, 1);
                         if ("@" === fst) if (csstr.search("@media") > -1) {
                             return;
@@ -121,23 +122,35 @@
             }
         }
         return cssrule;
-    }, applyDeclaration = function(i, cssDecl) {
+    };
+    window.CSScriptVariables = {};
+    var applyDeclaration = function(i, cssDecl) {
         var $this = this, $props = {};
         return foreach(cssDecl, function(key, value) {
-            key = "script" === key || "scripts" === key ? "content" : key, value = value.replace(/\$i/g, i).replace("this", "$this"), 
-            value = value.replace(/\"\%\(/, "%(").replace(/\)\%\"/, ")%"), value = value.replace(/\'\%\(/, "%(").replace(/\)\%\'/, ")%");
-            var csscValues = value.match(/\%\([a-zA-Z\.\,\!\(\)\'\"\:\?\d\<\>\*\/\=\$\s\+\-\_\[\]]+\)\%/g);
-            csscValues && foreach(csscValues, function(csscValue) {
+            var inlineScript = "script" === key || "scripts" === key ? !0 : !1;
+            value = value.replace(/\$i/g, i).replace(/this/g, "$this").replace(/\@/g, "CSScriptVariables."), 
+            value = value.replace(/\"\%\(/, "%(").replace(/\)\%\"/, ")%"), value = value.replace(/\'\%\(/, "%(").replace(/\)\%\'/, ")%"), 
+            value = value.replace(/\(\!\$/g, "({").replace(/\$\!\)/g, "})");
+            var csscValues = value.match(/\%\([a-zA-Z\.\,\!\@\(\)\'\"\:\?\d\<\>\*\/\=\$\#\s\+\-\_\[\]\{\}]+\)\%/g);
+            if (csscValues && foreach(csscValues, function(csscValue) {
                 var newValue, script = csscValue.replace(/\%\(/, "").replace(/\)\%/, "");
+                if (inlineScript) {
+                    try {
+                        eval(script);
+                    } catch (err) {}
+                    delete $props[key];
+                } else {
+                    try {
+                        eval("newValue = " + script);
+                    } catch (err) {}
+                    value = void 0 !== newValue ? value.replace(csscValue, newValue) : value.replace(csscValue, null);
+                }
+            }), !inlineScript) {
                 try {
-                    eval("newValue = " + script);
+                    eval("value = " + value);
                 } catch (err) {}
-                value = void 0 !== newValue ? value.replace(csscValue, newValue) : value.replace(csscValue, null);
-            });
-            try {
-                eval("value = " + value);
-            } catch (err) {}
-            $props[key] = void 0 !== value ? value : null;
+                $props[key] = void 0 !== value ? value : null;
+            }
         }), $(this).css($props), this.defcssc || (this.defcssc = $props), $props;
     }, CSScriptLists = function() {
         return this.length = 0, this;

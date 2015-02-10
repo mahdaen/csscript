@@ -5,7 +5,7 @@
     window.CSScriptExtractAll = false;
 
     /* Reg Expression to Get CSS Block */
-    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\?\$\_\[\]]+\}?\}/g;
+    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]]+\}/g;
 
     /* Parse all Stylesheets when document ready */
     $.ready(function() {
@@ -47,7 +47,7 @@
     }
 
     /* Creating Parser */
-    $.renderCSScript = function(cssString, url) {
+    $.renderCSScript = function() {
         foreach(ColectedCSS, function (CSSes) {
             extractBlocks(CSSes.css, CSSes.url);
         });
@@ -71,6 +71,9 @@
     var extractBlocks = function(cssString, url) {
         if (!isString(cssString)) return;
 
+        /* Replacing javascript braches to prevent wrong selection */
+        cssString = cssString.replace(/\(\s?\{/g, '(!$').replace(/\}\s?\)/g, '$!)');
+
         /* Getting CSS Blocks */
         var cssBlocks = cssString.match(RgxBlock);
 
@@ -81,7 +84,7 @@
                 /* Don't proceed if */
                 if (csstr.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
 
-                if (csstr.search('@') > -1) csstr += '}';
+                if (csstr.search(/^\@/) > -1) csstr += '}';
                 csstr = csstr.replace(/\n+/, '');
 
                 var fst = csstr.slice(0, 1);
@@ -283,21 +286,25 @@
         return cssrule;
     }
 
+    /* CSScript Variable Holders */
+    window.CSScriptVariables = {};
+
     /* Function to apply Style Declarations */
     var applyDeclaration = function(i, cssDecl) {
         var $this = this, $props = {};
 
         foreach(cssDecl, function (key, value) {
-            /* Converting key if key == scripts || script */
-            key = key === 'script' || key === 'scripts' ? 'content' : key;
+            var inlineScript = key === 'script' || key === 'scripts' ? true : false;
 
             /* Processing Value */
-            value = value.replace(/\$i/g, i).replace('this', '$this');
+            value = value.replace(/\$i/g, i).replace(/this/g, '$this').replace(/\@/g, 'CSScriptVariables.');
 
             value = value.replace(/\"\%\(/, '%(').replace(/\)\%\"/, ')%');
             value = value.replace(/\'\%\(/, '%(').replace(/\)\%\'/, ')%');
 
-            var csscValues = value.match(/\%\([a-zA-Z\.\,\!\(\)\'\"\:\?\d\<\>\*\/\=\$\s\+\-\_\[\]]+\)\%/g);
+            value = value.replace(/\(\!\$/g, '({').replace(/\$\!\)/g, '})');
+
+            var csscValues = value.match(/\%\([a-zA-Z\.\,\!\@\(\)\'\"\:\?\d\<\>\*\/\=\$\#\s\+\-\_\[\]\{\}]+\)\%/g);
 
             if (csscValues) {
                 foreach(csscValues, function (csscValue) {
@@ -305,26 +312,39 @@
 
                     var script = csscValue.replace(/\%\(/, '').replace(/\)\%/, '');
 
-                    try {
-                        eval('newValue = ' + script);
-                    } catch (err) {}
+                    if (inlineScript) {
+                        try {
+                            eval(script);
+                        } catch (err) {}
 
-                    if (newValue !== undefined) {
-                        value = value.replace(csscValue, newValue);
-                    } else {
-                        value = value.replace(csscValue, null);
+                        delete $props[key];
+                    }
+
+                    else {
+                        try {
+                            eval('newValue = ' + script);
+                        } catch (err) {}
+
+                        if (newValue !== undefined) {
+                            value = value.replace(csscValue, newValue);
+                        } else {
+                            value = value.replace(csscValue, null);
+                        }
                     }
                 });
             }
 
-            try {
-                eval('value = ' + value);
-            } catch (err) {}
+            /* Removing Scripts Parts */
+            if (!inlineScript) {
+                try {
+                    eval('value = ' + value);
+                } catch (err) {}
 
-            if (value !== undefined) {
-                $props[key] = value;
-            } else {
-                $props[key] = null;
+                if (value !== undefined) {
+                    $props[key] = value;
+                } else {
+                    $props[key] = null;
+                }
             }
         });
 
