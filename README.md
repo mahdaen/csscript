@@ -2,8 +2,9 @@ CSS Script
 ====
 
 Inline `css` script runner. Use `javascript` to define `css` value or eval script directly via css.
-**CSS Script** is [DOMList](https://github.com/mahdaen/domlist) extension.
+**CSS Script** is [DOMList](https://github.com/mahdaen/domlist) and **jQuery** extension.
 To makes **CSS Script** working, you should load it after loading DOMList.
+If you want to use **jQUery**, then you must load [jQPatch](https://github.com/mahdaen/jqpatch) before load this. 
 
 ### **Syntax**
 >`cssproperty: '%(SCRIPT)%';`
@@ -25,7 +26,7 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 If you want to access the converted rules, you can read `window.CSScriptLists` object in browser console.
 
 #### **Download**
-You can get `**CSScript**` by choosing download above or using:
+You can get **CSScript** by choosing download above or using:
 ```
 npm install csscript
 ```
@@ -38,11 +39,23 @@ bower install csscript
 * Add Media Query Support
 * Add Font Face Support
 * Add Keyframes Support
-* Add events support. Currently only support with `:click`, `:hover` and `:focus` event and automatically re-render when window resized.
+* Add more events support.
 * Add ajax loaded support.
 
-### **Examples**
+#### **Supported Events**
+- `click`
+- `hover`
+- `mouseenter`
+- `mouseleave`
+- `focus`
+- `blur`
+- `change`
 
+#### **Inline Params**
+- `$i` as index number of current element.
+- `@` as `var` to define variable. e.g: `@winHeight = window.innerHeight` is equal to `var winHeight = window.innerHeight`
+
+### **Examples**
 ```html
 <html>
 	<head>
@@ -57,6 +70,11 @@ bower install csscript
 					<div class="only-mobile"></div>
 				</div>
 			</div>
+		</div>
+		<div class="fit-list">
+			<div class="fill"></div>
+			<div class="fill"></div>
+			<div class="fill"></div>
 		</div>
 	</body>
 </html>
@@ -87,6 +105,24 @@ ul .increased-height {
 // Run javascripts.
 .container-content:click {
     scripts: '%($(".container").toggleClass("content-hovered"))%';
+}
+
+// Create element that has dynamic height depend on childrens length on parent element.
+.fit-list {
+	display: block;
+	width: 100%;
+	height: '%( window.innerHeight )%';
+}
+.fit-list .fill {
+	// Get the parent element childrens length.
+	script: '%( @flChilds = $(this).parent().children().length )%';
+	
+	// Get the height by counting total height with total childrens.
+	script: '%( @clHeight = (window.innerHeight / @flChilds) )%';
+	
+	display: block;
+	width: 100%;
+	height: '%( @clHeight )%'; // Using @clHeight
 }
 ```
 

@@ -15,23 +15,44 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
 
         uglify: {
-            dist: {
+            distDL: {
                 options: {
-                    mangle: true
+                    mangle: true,
+                    sourceMap: true,
+                    sourceMapName: 'dist/csscript.domlist.min.map'
                 },
                 files: {
-                    'dist/csscript.min.js': 'source/csscript.js'
+                    'dist/csscript.domlist.min.js': 'source/csscript.domlist.js'
                 }
             },
-            clean: {
+            cleanDL: {
                 options: {
                     mangle: false,
                     beautify: true
                 },
                 files: {
-                    'dist/csscript.js': 'source/csscript.js'
+                    'dist/csscript.domlist.js': 'source/csscript.domlist.js'
                 }
-            }
+            },
+            distJQ: {
+                options: {
+                    mangle: true,
+                    sourceMap: true,
+                    sourceMapName: 'dist/csscript.jquery.min.map'
+                },
+                files: {
+                    'dist/csscript.jquery.min.js': 'source/csscript.jquery.js'
+                }
+            },
+            cleanJQ: {
+                options: {
+                    mangle: false,
+                    beautify: true
+                },
+                files: {
+                    'dist/csscript.jquery.js': 'source/csscript.jquery.js'
+                }
+            },
         },
 
         watch: {
