@@ -2,8 +2,10 @@
     'use strict';
 
     /* Parse all Stylesheets when document ready */
-    $.ready(function() {
-        setTimeout(initParser, 0);
+    document.addEventListener('readystatechange', function() {
+        if (document.readyState === 'interactive') {
+            setTimeout(initParser, 0);
+        }
     });
 
     /* Parser Initializer */
@@ -45,104 +47,172 @@
     /* Creating Parser */
     $.renderCSScript = function() {
         foreach(ColectedCSS, function (CSSes) {
-            var css = new CSSStyleSheet(CSSes.url, CSSes.css);
-            extractBlocks(CSSes.css, CSSes.url);
+            /* Creating New Stylesheet */
+            var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
+
+            /* Extracting CSS Rules */
+            stylesheet.parseRules();
         });
     }
 
-    /* CSS Parser */
-    var extractBlocks = function(cssString, url) {
-        if (!isString(cssString)) return;
+    /* Collected CSScript Holder*/
+    var ColectedCSScript = [];
 
-        /* Replacing javascript braches to prevent wrong selection */
-        cssString = cssString.replace(/\(\s?\{/g, '(!$').replace(/\}\s?\)/g, '$!)');
+    /* Creating CSSList Objects */
+    var CSScriptLists = function() {
+        this.length = 0;
 
-        /* Getting CSS Blocks */
-        var cssBlocks = cssString.match(RgxBlock);
+        return this;
+    }
 
-        if (cssBlocks) {
-            var cssStylesheet = new CSSStylesheet(url);
+    CSScriptLists.prototype = {
+        push: function(obj) {
+            this[this.length] = obj;
+            this.length = (this.length + 1);
 
-            foreach(cssBlocks, function (csstr) {
-                /* Don't proceed if extract all is disabled and css not contains js pattern */
-                if (csstr.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
-
-                /* Replacing new line at begining */
-                csstr = csstr.replace(/\n+/, '');
-
-                /* Get first character to determine does ti regular selector or special selector like @media */
-                var fst = csstr.slice(0, 1);
-
-                /* If special selector, check the selector type */
-                if (fst === '@') {
-                    /* Fixing Block issue when block started with @ */
-                    if (csstr.search(/^\@/) > -1) csstr += '}';
-
-                    if (csstr.search('@media') > -1) {
-                        /* Don't proceed until to do complete */
-                        return;
-                    }
-                    else if (csstr.search('@keyframes') > -1 || csstr.search('@-webkit-keyframes') > -1) {
-                        /* Keyframes Declaration */
-                        /* Don't proceed until to do complete */
-                        return;
-                    }
-                    else if (csstr.search('@font-face') > -1) {
-                        /* Font Face Declaration */
-                        /* Don't proceed until to do complete */
-                        return;
-                    }
-                }
-
-                /* If regular selector, proceed it directly */
-                else {
-                    /* Create nwe CSS Rule Object */
-                    var cssrule = new CSSStyleRule(csstr);
-
-                    /* Adding Rules Holder to each cssrule */
-                    cssrule.parent = cssStylesheet.rules;
-
-                    /* Parsing Rule */
-                    cssrule.extract();
-                    parseRule(cssrule, csstr, true);
-
-                    /* Push CSS Rule Object to CSS Stylesheet Object */
-                    cssStylesheet.rules.push(cssrule);
-                }
-
-                // Todo: Add Media Query support.
-                // Todo: Add Font Face support.
-                // Todo: Add Keyframe support.
-            });
+            return this;
         }
     }
 
-    /* CSS Rule Parser */
-    var parseRule = function(rule, csstr, proceed) {
-        /* CSS Style Desclaration */
-        var cssrule = rule, selector;
+    window.CSScriptLists = new CSScriptLists();
 
-        /* Getting Selector */
-        selector = csstr.match(/[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+    /* Creating CSSStylesheet Objects */
+    var CSSStylesheet = function(url, cssText) {
+        this.href = url;
+        this.cssText = cssText;
+        this.rules = new CSSRuleList();
 
-        /* Changing Selector Type */
-        cssrule.type = 'CSSStyleRule';
+        window.CSScriptLists.push(this);
 
-        if (selector) {
+        return this;
+    }
+
+    CSSStylesheet.prototype = {
+        /* Extract CSSRules from this CSS Text */
+        parseRules: function() {
+            if (!this.cssText || !this.href) return;
+
+            var CSStext = this.cssText, URL = this.href, $stylesheet = this;
+
+            /* Replacing javascript braches to prevent wrong selection */
+            CSStext = CSStext.replace(/\(\s?\{/g, '(!$').replace(/\}\s?\)/g, '$!)');
+
+            /* Getting CSS Blocks */
+            var cssBlocks = CSStext.match(RgxBlock);
+
+            if (cssBlocks) {
+                foreach(cssBlocks, function (cssblock) {
+                    /* Don't proceed if extract all is disabled and css not contains js pattern */
+                    if (cssblock.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
+
+                    /* Replacing new line at begining */
+                    cssblock = cssblock.replace(/\n+/, '');
+
+                    /* Get first character to determine does ti regular selector or special selector like @media */
+                    var fst = cssblock.slice(0, 1);
+
+                    /* If special selector, check the selector type */
+                    if (fst === '@') {
+                        /* Fixing Block issue when block started with @ */
+                        if (cssblock.search(/^\@/) > -1) cssblock += '}';
+
+                        if (cssblock.search('@media') > -1) {
+                            /* Don't proceed until to do complete */
+                            return;
+                        }
+                        else if (cssblock.search('@keyframes') > -1 || cssblock.search('@-webkit-keyframes') > -1) {
+                            /* Keyframes Declaration */
+                            /* Don't proceed until to do complete */
+                            return;
+                        }
+                        else if (cssblock.search('@font-face') > -1) {
+                            /* Font Face Declaration */
+                            /* Don't proceed until to do complete */
+                            return;
+                        }
+                    }
+
+                    /* If regular selector, proceed it directly */
+                    else {
+                        /* Create nwe CSS Rule Object */
+                        var cssrule = new CSSStyleRule(cssblock);
+
+                        /* Adding Rules Holder to each cssrule */
+                        cssrule.parent = $stylesheet.rules;
+
+                        /* Parsing Rule */
+                        cssrule.parseStyles(true);
+
+                        /* Push CSS Rule Object to CSS Stylesheet Object */
+                        $stylesheet.rules.push(cssrule);
+                    }
+
+                    // Todo: Add Media Query support.
+                    // Todo: Add Font Face support.
+                    // Todo: Add Keyframe support.
+                });
+            }
+        }
+    }
+
+    /* Creating CSSList Objects */
+    var CSSRuleList = function() {
+        this.length = 0;
+
+        return this;
+    }
+
+    CSSRuleList.prototype = {
+        push: function(obj) {
+            this[this.length] = obj;
+            this.length = (this.length + 1);
+
+            return this;
+        }
+    }
+
+    /* Creating CSSStyle Object */
+    var CSSStyleRule = function(csstring, selector) {
+        this.cssText = csstring;
+        this.selector = selector;
+
+        this.styles = new CSSStyleList();
+        this.cstyle = new CSScriptStyle();
+
+        ColectedCSScript.push(this);
+
+        return this;
+    }
+
+    CSSStyleRule.prototype = {
+        /* Style Parser */
+        parseStyles: function(render) {
+            /* CSS Style Desclaration */
+            var $rule = this, cssText = this.cssText, selector;
+
+            /* Getting Selector */
+            selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+
+            /* Escape if no selector */
+            if (!selector) return;
+
+            /* Changing Selector Type */
+            $rule.type = 'CSSStyleRule';
+
             /* Replacing Selector to get declaration list */
-            var cssdec = csstr.replace(selector[0], '').replace('}', '').replace(/\n+/g, '');
+            var cssdec = cssText.replace(selector[0], '').replace('}', '').replace(/\n+/g, '');
 
             /* Beautify Selector */
             selector = selector[0].replace(/\s?\{/, '').replace(/\n/g, ' ');
 
             /* Setting selector to cssrule selector */
-            cssrule.selector = selector;
+            $rule.selector = selector;
 
             /* Getting Declarations with splitting ';' */
             cssdec = cssdec.replace(/\;\s+/, ';').split(';');
 
             if (cssdec) {
-                var csscDeclarations = { proceed: false, styles: [] };
+                var declarations = $rule.styles;
 
                 /* Parsing Declarations */
                 foreach(cssdec, function (style) {
@@ -162,202 +232,76 @@
 
                             /* Add property to declaration list if contains patter and tell to proceed */
                             if (value.search(/\%\(/) > -1 && value.search(/\)\%/)) {
-                                csscDeclarations.styles.push({ key: prop, value: value });
-                                csscDeclarations.proceed = true;
+                                $rule.cstyle.push(prop, value);
+                            } else {
+                                $rule.styles.push(prop, value);
                             }
-
-                            /* Adding rule to style lists */
-                            cssrule.styles.push(prop, value);
                         }
                     }
                 });
 
                 /* CSSJs Parser */
-                if (proceed && csscDeclarations.proceed) {
-                    rule.declaredCSScript = csscDeclarations;
-
-                    ColectedCSScript.push(rule);
-
-                    cssrule.render();
-
-                    var pseudos = ['hover', 'focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change'];
-                    var haspsdo = false;
-
-                    /* Check pseudo to define event listener */
-                    foreach(pseudos, function(pseudo) {
-                        if (selector.search(':' + pseudo) > -1) {
-                            haspsdo = true;
-                        }
-                    });
-
-                    /* If has pseudo, check the event type and listen the event */
-                    if (haspsdo) {
-                        foreach(pseudos, function (pseudo) {
-                            /* Escape if no match pseudo */
-                            if (selector.search(pseudo) < 0) return;
-
-                            /* Removing pseudo from selector */
-                            selector = selector.replace(new RegExp('\\:' + pseudo, 'g'), '');
-
-                            /* Use special pseudo handler if contains special pseudo */
-                            if (pseudo in SpecialPseudos) {
-                                var aState = SpecialPseudos[pseudo].a, bState = SpecialPseudos[pseudo].b
-
-                                $(selector).each(function(i) {
-                                    var $me = this;
-
-                                    // Getting original values.
-                                    $me._orgcss = {};
-
-                                    foreach(csscDeclarations.styles, function (styles) {
-                                        var key = styles.key;
-
-                                        if (key !== 'script' && key !== 'scripts') {
-                                            var cval = $(this).css(key);
-
-                                            if (cval) {
-                                                $me._orgcss[key] = cval;
-                                            }
-
-                                            else {
-                                                $me._orgcss[key] = null;
-                                            }
-                                        }
-                                    });
-
-                                    if (this._evcol) {
-                                        $(this).unlisten('css' + aState).unlisten('css' + bState);
-                                    }
-
-                                    $(this)
-                                        .listen('css' + aState, aState, function() {
-                                            applyDeclaration.call(this, i, csscDeclarations);
-                                        })
-                                        .listen('css' + bState, bState, function() {
-                                            if (this._orgcss) {
-                                                foreach(this._orgcss, function (key, value) {
-                                                    if (value !== null) {
-
-                                                    }
-                                                });
-                                            }
-                                        });
-                                });
-                            }
-
-                            else {
-                                return;
-                                $(selector).each(function(i) {
-                                    /* Remove event listener if already defined */
-                                    if (this._evcol) {
-                                        $(this).unlisten('css' + pseudo);
-                                    }
-
-                                    /* Create new Listener */
-                                    $(this).listen('css' + pseudo, pseudo, function() {
-                                        applyDeclaration.call(this, i, csscDeclarations);
-                                    });
-                                });
-                            }
-                        });
-                    }
-
-                    /* Apply directly if no pseudo in selector */
-                    else {
-                        $(selector).each(function(i) {
-                            this.csselector = selector;
-
-                            applyDeclaration.call(this, i, csscDeclarations);
-                        });
-                    }
-
-                    //if (selector.search(':hover') > -1) {
-                    //    var idselect = selector.replace(/\:hover/g, '').replace(/\:focuse/g, '').replace(/\:checked/g, '');
-                    //
-                    //    $(idselect).each(function(i) {
-                    //        if (this._evcol) {
-                    //            $(this).unlisten('csschover');
-                    //        }
-                    //
-                    //        $(this).listen('csschover', {
-                    //            'mouseenter': function() {
-                    //                applyDeclaration.call(this, i, csscDeclarations);
-                    //            },
-                    //            'mouseleave': function() {
-                    //                $(this).css(this.defcssc || {});
-                    //            }
-                    //        });
-                    //    });
-                    //}
-                    //
-                    //else if (selector.search(':focus') > -1) {
-                    //    var idselect = selector.replace(/\:hover/g, '').replace(/\:focuse/g, '').replace(/\:checked/g, '').replace(/\:click/g, '');
-                    //
-                    //    $(idselect).each(function(i) {
-                    //        if (this._evcol) {
-                    //            $(this).unlisten('csscfocus');
-                    //        }
-                    //
-                    //        $(this).listen('csscfocus', {
-                    //            'focus': function() {
-                    //                applyDeclaration.call(this, i, csscDeclarations);
-                    //            },
-                    //            'blur': function() {
-                    //                $(this).css(this.defcssc || {});
-                    //            }
-                    //        });
-                    //    });
-                    //}
-                    //
-                    //else if (selector.search(':click') > -1) {
-                    //    var idselect = selector.replace(/\:hover/g, '').replace(/\:focuse/g, '').replace(/\:checked/g, '').replace(/\:click/g, '');
-                    //
-                    //    $(idselect).each(function(i) {
-                    //        if (this._evcol) {
-                    //            $(this).unlisten('csscclick');
-                    //        }
-                    //
-                    //        $(this).listen('csscclick', {
-                    //            'click': function() {
-                    //                applyDeclaration.call(this, i, csscDeclarations);
-                    //            }
-                    //        });
-                    //    });
-                    //}
-                    //
-                    //else {
-                    //    $(selector).each(function(i) {
-                    //        this.csselector = selector;
-                    //
-                    //        applyDeclaration.call(this, i, csscDeclarations, selector);
-                    //    });
-                    //}
+                if (render) {
+                    $rule.render();
 
                     // Todo: Add oncheck support.
                 }
             }
-        }
+        },
 
-        return cssrule;
-    }
+        /* Style Renderer */
+        render: function() {
+            var $rule = this, $selector = this.selector, $scripts = this.cstyle;
 
-    /* Collected CSScript Holder*/
-    var ColectedCSScript = [];
+            var actions = ['focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change'];
 
-    /* Special Pseduos */
-    var SpecialPseudos = {
-        'hover': {
-            'a': 'mouseenter',
-            'b': 'mouseleave'
+            /* If has pseudo, check the event type and listen the event */
+            if ($selector.search(':') > -1) {
+                foreach(actions, function (pseudo) {
+                    /* Escape if no match pseudo */
+                    if ($selector.search(pseudo) < 0) return;
+
+                    /* Removing pseudo from selector */
+                    $selector = $selector.replace(new RegExp('\\:' + pseudo, 'g'), '');
+
+                    $($selector).each(function(i) {
+                        /* Adding Selector to this element */
+                        this['_' + pseudo + 'Style'] = $rule;
+
+                        /* Remove event listener if already defined */
+                        if (this._evcol) {
+                            $(this).unlisten('css' + pseudo);
+                        }
+
+                        /* Create new Listener */
+                        $(this).listen('css' + pseudo, pseudo, function() {
+                            applyStyles.call(this, i, '_' + pseudo + 'Style');
+                        });
+                    });
+                });
+            }
+
+            /* Apply directly if no pseudo in selector */
+            else {
+                $($selector).each(function(i) {
+                    /* Adding Selector to this element */
+                    this._regularStyle = $rule;
+
+                    /* Rendering declarations */
+                    applyStyles.call(this, i, '_regularStyle');
+                });
+            }
+
+            return this;
         }
     };
 
-    /* Function to apply Declarations */
-    var applyDeclaration = function(i, cssDecl, selector) {
-        var $this = this, $props = {}, hasprop;
+    /* Function to apply styles */
+    var applyStyles = function(i, groupd, inline) {
+        var $this = this, $props = {}, hasprop, cstyles = this[groupd].cstyle, selector = this[groupd].selector;
 
-        foreach(cssDecl.styles, function(style) {
-            var key = style.key, value = style.value;
+        foreach(cstyles, function(style) {
+            var key = style.property, value = style.value;
 
             var inlineScript = key === 'script' || key === 'scripts' ? true : false;
 
@@ -377,17 +321,13 @@
                     var script = csscValue.replace(/\%\(/, '').replace(/\)\%/, '');
 
                     if (inlineScript) {
-                        try {
-                            eval(script);
-                        } catch (err) {}
+                        try { eval(script); } catch (err) {}
 
                         delete $props[key];
                     }
 
                     else {
-                        try {
-                            eval('newValue = ' + script);
-                        } catch (err) {}
+                        try { eval('newValue = ' + script); } catch (err) {}
 
                         if (newValue !== undefined) {
                             value = value.replace(csscValue, newValue);
@@ -414,35 +354,47 @@
             }
         });
 
-        //$(this).css($props);
-
-        if (!this.defcssc) {
-            this.defcssc = $props;
-        }
-
         if (hasprop) {
-            /* Generating CSS Script */
-            var cssString = createCSS(this.csselector + ':nth-child(' + i + ')', $props);
-
-            /* If css ever generated, replace the old one */
-            if (this._oldcss && CSScriptCSS.search(this._oldcss) > -1) {
-                CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString);
+            if (inline) {
+                $(this).css($props);
             }
 
-            /* Else, append new css */
             else {
-                CSScriptCSS += createCSS(this.csselector + ':nth-child(' + (i + 1) + ')', $props);
+                /* Setting up CSS ID */
+                $(this).attr('cssid', this.getAttribute('cssid') || (CSSID + 1, CSSID++));
+
+                /* Generating CSS Script */
+                var cssString = createCSS(selector + '[cssid="' + (this.getAttribute('cssid') || (CSSID + 1, CSSID++)) + '"]', $props);
+
+                /* If css ever generated, replace the old one */
+                if (this._oldcss && CSScriptCSS.search(this._oldcss) > -1) {
+                    CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString);
+                }
+
+                /* Else, append new css */
+                else {
+                    CSScriptCSS += cssString;
+                }
+
+                /* Write CSS String to holder */
+                $('#csscript-holder').html(CSScriptCSS);
+
+                /* Replace current CSS String */
+                this._oldcss = cssString;
             }
-
-            /* Write CSS String to holder */
-            $('#csscript-holder').html(CSScriptCSS);
-
-            /* Replace current CSS String */
-            this._oldcss = cssString;
         }
 
         return $props;
     };
+
+    /* Private Variables */
+    var PrivateVariables = function() { return this };
+
+    PrivateVariables.prototype = {
+        push: function(key, value) {
+            this[key] = value;
+        }
+    }
 
     /* CSS String Maker */
     var createCSS = function(selector, props) {
@@ -450,88 +402,14 @@
             var str = '\n' + selector + ' { \n';
 
             foreach(props, function (key, value) {
-                str += '\t' + key + ': ' + value + ';';
+                str += '\t' + key + ': ' + (isNumber(value) ? value + 'px' : value) + ';\n';
             });
 
+            str = str.replace(/\n$/, '');
             str += '\n}';
         }
 
         return str;
-    };
-
-    /* Creating CSSList Objects */
-    var CSScriptLists = function() {
-        this.length = 0;
-
-        return this;
-    }
-    CSScriptLists.prototype = {
-        push: function(obj) {
-            this[this.length] = obj;
-            this.length = (this.length + 1);
-
-            return this;
-        }
-    }
-    window.CSScriptLists = new CSScriptLists();
-
-    /* Creating CSSStylesheet Objects */
-    var CSSStylesheet = function(url, cssText) {
-        this.href = url;
-        this.cssText = cssText;
-        this.rules = new CSSRuleList();
-
-        window.CSScriptLists.push(this);
-
-        return this;
-    }
-    CSSStyleSheet.prototype = {
-        extract: function() {
-
-        }
-    }
-
-    /* Creating CSSList Objects */
-    var CSSRuleList = function() {
-        this.length = 0;
-
-        return this;
-    }
-    CSSRuleList.prototype = {
-        push: function(obj) {
-            this[this.length] = obj;
-            this.length = (this.length + 1);
-
-            return this;
-        },
-
-        indexOf: function(selector) {
-            var found;
-
-            foreach(this, function (rule) {
-                if (rule.selector === selector) {
-                    found = rule;
-                }
-            });
-
-            return found;
-        }
-    }
-    /* Creating CSSStyle Object */
-    var CSSStyleRule = function(csstring, selector) {
-        this.cssText = csstring;
-        this.selector = selector;
-        this.styles = new CSSStyleList();
-
-        return this;
-    }
-    CSSStyleRule.prototype = {
-        render: function() {
-            console.log(this);
-        },
-        extract: function() {
-
-        }
     };
 
     /* Creating CSSRule Object */
@@ -546,6 +424,22 @@
         }
     }
 
+    /* Creating CSSRule Object */
+    var CSScriptStyle = function() {
+        this.render = false;
+        this.length = 0;
+
+        return this;
+    }
+    CSScriptStyle.prototype = {
+        push: function(key, value) {
+            this[this.length] = { property: key, value: value };
+            this.length++;
+
+            return this;
+        }
+    }
+
     /* Creating CSSMediaQueryRule Object */
     var CSSMediaRule = function(csstring, query, selector) {
         this.cssText = csstring;
@@ -554,6 +448,7 @@
 
         return this;
     }
+
     /* Creating CSSKeyframeRule Object */
     var CSSKeyframeRule = function(csstring, selector) {
         this.cssText = csstring;
@@ -562,6 +457,7 @@
 
         return this;
     }
+
     /* Creating CSSFontRule Object */
     var CSSFontRule = function(csstring, selector) {
         this.cssText = csstring;
@@ -577,6 +473,9 @@
     /* Function to apply Style Declarations */
     var CSScriptCSS = '';
 
+    /* CSS ID */
+    var CSSID = 0;
+
     /* Config does all css parsed or only that contains CSScript */
     window.CSScriptExtractAll = false;
 
@@ -590,9 +489,7 @@
 
         windowresize = setTimeout(function() {
             foreach(ColectedCSScript, function (rule) {
-                $(rule.selector).each(function(i) {
-                    applyDeclaration.call(this, i, rule.declaredCSScript);
-                });
+                rule.render();
             });
         }, 200);
     });

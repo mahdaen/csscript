@@ -361,13 +361,10 @@
 
             else {
                 /* Setting up CSS ID */
-                $(this).attr('cssid', CSSID);
+                $(this).attr('cssid', this.getAttribute('cssid') || (CSSID + 1, CSSID++));
 
                 /* Generating CSS Script */
-                var cssString = createCSS(selector + '[cssid="' + CSSID + '"]', $props);
-
-                /* Increasing CSSID */
-                CSSID++;
+                var cssString = createCSS(selector + '[cssid="' + (this.getAttribute('cssid') || (CSSID + 1, CSSID++)) + '"]', $props);
 
                 /* If css ever generated, replace the old one */
                 if (this._oldcss && CSScriptCSS.search(this._oldcss) > -1) {

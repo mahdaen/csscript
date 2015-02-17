@@ -141,9 +141,9 @@
                 $props[key] = void 0 !== value ? value : null;
             }
         }), hasprop) if (inline) $(this).css($props); else {
-            $(this).attr("cssid", CSSID);
-            var cssString = createCSS(selector + '[cssid="' + CSSID + '"]', $props);
-            CSSID++, this._oldcss && CSScriptCSS.search(this._oldcss) > -1 ? CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString) : CSScriptCSS += cssString, 
+            $(this).attr("cssid", this.getAttribute("cssid") || CSSID++);
+            var cssString = createCSS(selector + '[cssid="' + (this.getAttribute("cssid") || CSSID++) + '"]', $props);
+            this._oldcss && CSScriptCSS.search(this._oldcss) > -1 ? CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString) : CSScriptCSS += cssString, 
             $("#csscript-holder").html(CSScriptCSS), this._oldcss = cssString;
         }
         return $props;
