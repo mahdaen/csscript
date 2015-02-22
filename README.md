@@ -7,11 +7,15 @@ To makes **CSS Script** working, you should load it after loading DOMList.
 If you want to use **jQUery**, then you must load [jQPatch](https://github.com/mahdaen/jqpatch) before load this. 
 
 ### **Syntax**
->`cssproperty: '%(SCRIPT)%';`
+***
+
+`cssproperty: '%(SCRIPT)%';`
 
 Scripts should be inside `%()%` pattern. Currently we have param `$i` as index number of selected element.
 
 ### **CONFIGS**
+***
+
 By default, CSScript convert the CSSRule string to CSSRule object if contains CSScript pattern.
 If you want to convert all rules no matter they have CSScript pattern or not, please write config before loading the CSScript.
 
@@ -26,6 +30,8 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 If you want to access the converted rules, you can read `window.CSScriptLists` object in browser console.
 
 #### **Download**
+***
+
 You can get **CSScript** by choosing download above or using:
 ```
 npm install csscript
@@ -36,13 +42,15 @@ bower install csscript
 ```
 
 #### **TODO**:
-* Add Media Query Support
+***
+
 * Add Font Face Support
 * Add Keyframes Support
 * Add more events support.
-* Add ajax loaded support.
 
 #### **Supported Events**
+***
+
 - `click`
 - `hover`
 - `mouseenter`
@@ -52,10 +60,14 @@ bower install csscript
 - `change`
 
 #### **Inline Params**
+***
+
 - `$i` as index number of current element.
 - `@` as `var` to define variable. e.g: `@winHeight = window.innerHeight` is equal to `var winHeight = window.innerHeight`
 
 ### **Examples**
+***
+
 ```html
 <html>
 	<head>
@@ -124,9 +136,39 @@ ul .increased-height {
 	width: 100%;
 	height: '%( @clHeight )%'; // Using @clHeight
 }
+
+// Use with media query.
+@media only screen and (max-width: 1024) {
+    .fit-list {
+        script: '%( $(this).appendTo(".container-content") )%';
+    }
+}
+```
+
+### **Manual Render**
+***
+
+Use `$.renderCSScript()` to re-render the styles.
+Usually, it's usefull when you want to use `CSScript` after loading ajax or drawing new element.
+
+##### `Example`
+```js
+$.ajax('http://localhost').complete(function(data) {
+    $('.content').append(data);
+    
+    // Re-render styles after ajax complete and inserting content complete.
+    $.renderCSScript();
+});
 ```
 
 ### **NOTES**
+***
+
 This project is under development. Use it if you want to give a try.
 If you want to contribute to this project, I say thanks. :)
 https://github.com/mahdaen/csscript
+
+
+## Release History
+* 2015-02-22        v0.1.0      "Adding Media Query support and Manual Render (for ajax or draw purpose)"
+* 2015-02-06        v0.0.1      "First release"

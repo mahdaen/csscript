@@ -1,6 +1,6 @@
 {
     "name": "csscript",
-    "version": "0.0.7",
+    "version": "0.1.0",
     "description": "CSS inline script runner. Use javascript pattern to define css value.",
     "keywords": [
         "cssscript",
@@ -11,7 +11,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/mahdaen/cssscript.git"
+        "url": "https://github.com/mahdaen/csscript.git"
     },
     "devDependencies": {
         "grunt": "*",
@@ -19,7 +19,10 @@
         "grunt-contrib-uglify": "*",
         "grunt-contrib-watch": "*"
     },
-    "license": "MIT",
+    "license": {
+        "type": "MIT",
+        "url": "https://github.com/mahdaen/csscript/blob/master/LICENSE-MIT"
+    },
     "main": "Gruntfile.js",
     "authors": [
         {

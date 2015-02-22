@@ -7,32 +7,39 @@
         $('<style type="text/css" id="csscript-holder">').appendTo("head"), $('link[rel="stylesheet"]').each(function() {
             var url = $(this).attr("href");
             if (isString(url)) $.get(url).success(function(cssString) {
-                cssString.search(/\%\(/) < 0 && !CSScriptExtractAll || (ColectedCSS.push({
+                cssString.search(/\%\(/) < 0 && !CSScriptExtractAll || (CollectedCSS.push({
                     css: cssString,
                     url: url
                 }), $.renderCSScript());
             }); else {
                 var html = $(this).html();
                 if (html.search(/\%\(/) < 0) return;
-                html.length > 10 && (ColectedCSS.push({
+                html.length > 10 && (CollectedCSS.push({
                     css: html,
                     url: "local"
                 }), $.renderCSScript());
             }
         });
-    }, ColectedCSS = [];
+    }, CollectedCSS = [];
     $.renderCSScript = function() {
-        foreach(ColectedCSS, function(CSSes) {
+        $("#csscript-holder").html(" "), window.CSScriptLists.clean(), CollectedCSScripts = [], 
+        CSScriptCSS = "", foreach(CollectedCSS, function(CSSes) {
             var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
             stylesheet.parseRules();
         });
     };
-    var ColectedCSScript = [], CSScriptLists = function() {
+    var CollectedCSScripts = [], CSScriptLists = function() {
         return this.length = 0, this;
     };
     CSScriptLists.prototype = {
         push: function(obj) {
             return this[this.length] = obj, this.length = this.length + 1, this;
+        },
+        clean: function() {
+            var $this = this;
+            return foreach($this, function(a, i) {
+                delete $this[i], $this.length--;
+            }), this;
         }
     }, window.CSScriptLists = new CSScriptLists();
     var CSSStylesheet = function(url, cssText) {
@@ -50,7 +57,14 @@
                         cssblock = cssblock.replace(/\n+/, "");
                         var fst = cssblock.slice(0, 1);
                         if ("@" === fst) {
-                            if (cssblock.search(/^\@/) > -1 && (cssblock += "}"), cssblock.search("@media") > -1) return;
+                            if (cssblock.search(/^\@/) > -1 && (cssblock += "}"), cssblock.search("@media") > -1) {
+                                var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+                                if (media) {
+                                    var mediarule = new CSSMediaRule(cssblock, media[0]);
+                                    mediarule.parseMedia();
+                                }
+                                return;
+                            }
                             if (cssblock.search("@keyframes") > -1 || cssblock.search("@-webkit-keyframes") > -1) return;
                             if (cssblock.search("@font-face") > -1) return;
                         } else {
@@ -72,7 +86,7 @@
     };
     var CSSStyleRule = function(csstring, selector) {
         return this.cssText = csstring, this.selector = selector, this.styles = new CSSStyleList(), 
-        this.cstyle = new CSScriptStyle(), ColectedCSScript.push(this), this;
+        this.cstyle = new CSScriptStyle(), CollectedCSScripts.push(this), this;
     };
     CSSStyleRule.prototype = {
         parseStyles: function(render) {
@@ -185,7 +199,18 @@
     var CSSMediaRule = function(csstring, query) {
         return this.cssText = csstring, this.queries = query, this.rules = new CSSRuleList(), 
         this;
-    }, CSSKeyframeRule = function(csstring, selector) {
+    };
+    CSSMediaRule.prototype = {
+        parseMedia: function() {
+            var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo("head"), qrhold = $('<div id="mqr-holder">').appendTo("body"), qrhDefStyle = "#mqr-holder {\n	position: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}", qrhMedStyle = "#mqr-holder { width: 123px; }", qrhQuery = qrhDefStyle + "\n\n" + this.queries + "\n	" + qrhMedStyle + "\n}";
+            if (qrwrap.html(qrhQuery), 123 === qrhold.width()) {
+                var csstyle = new CSSStylesheet("local-media", this.cssText.replace(this.queries, ""));
+                csstyle.parseRules();
+            }
+            return qrwrap.remove(), qrhold.remove(), this;
+        }
+    };
+    var CSSKeyframeRule = function(csstring, selector) {
         return this.cssText = csstring, this.selector = selector, this.styles = new CSSStyleList(), 
         this;
     }, CSSFontRule = function(csstring, selector) {
@@ -195,10 +220,10 @@
     window.CSScriptVariables = {};
     var CSScriptCSS = "", CSSID = 0;
     window.CSScriptExtractAll = !1;
-    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g, windowresize = setTimeout(function() {}, 200);
+    var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g, RgmBlock = /[a-zA-Z\d\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g, windowresize = setTimeout(function() {}, 200);
     window.addEventListener("resize", function() {
         clearTimeout(windowresize), windowresize = setTimeout(function() {
-            foreach(ColectedCSScript, function(rule) {
+            foreach(CollectedCSScripts, function(rule) {
                 rule.render();
             });
         }, 200);

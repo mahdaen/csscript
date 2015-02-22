@@ -21,7 +21,7 @@
                 $.get(url).success(function(cssString) {
                     if (cssString.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
 
-                    ColectedCSS.push({ css: cssString, url: url });
+                    CollectedCSS.push({ css: cssString, url: url });
 
                     $.renderCSScript();
                 });
@@ -33,7 +33,7 @@
                 if (html.search(/\%\(/) < 0) return;
 
                 if (html.length > 10) {
-                    ColectedCSS.push({ css: html, url: 'local'})
+                    CollectedCSS.push({ css: html, url: 'local'})
 
                     $.renderCSScript();
                 }
@@ -42,11 +42,21 @@
     }
 
     /* Creating Colected CSS Holder */
-    var ColectedCSS = [];
+    var CollectedCSS = [];
 
     /* Creating Parser */
     $.renderCSScript = function() {
-        foreach(ColectedCSS, function (CSSes) {
+        /* Cleanup Rendered Styles */
+        $('#csscript-holder').html(' ');
+
+        window.CSScriptLists.clean();
+
+        CollectedCSScripts = [];
+
+        CSScriptCSS = '';
+
+        /* Parsing Collected CSS */
+        foreach(CollectedCSS, function (CSSes) {
             /* Creating New Stylesheet */
             var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
 
@@ -56,7 +66,7 @@
     }
 
     /* Collected CSScript Holder*/
-    var ColectedCSScript = [];
+    var CollectedCSScripts = [];
 
     /* Creating CSSList Objects */
     var CSScriptLists = function() {
@@ -69,6 +79,16 @@
         push: function(obj) {
             this[this.length] = obj;
             this.length = (this.length + 1);
+
+            return this;
+        },
+        clean: function() {
+            var $this = this;
+
+            foreach($this, function (a, i) {
+                delete $this[i];
+                $this.length--;
+            });
 
             return this;
         }
@@ -118,6 +138,13 @@
 
                         if (cssblock.search('@media') > -1) {
                             /* Don't proceed until to do complete */
+                            var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+
+                            if (media) {
+                                var mediarule = new CSSMediaRule(cssblock, media[0]);
+                                mediarule.parseMedia();
+                            }
+
                             return;
                         }
                         else if (cssblock.search('@keyframes') > -1 || cssblock.search('@-webkit-keyframes') > -1) {
@@ -147,7 +174,6 @@
                         $stylesheet.rules.push(cssrule);
                     }
 
-                    // Todo: Add Media Query support.
                     // Todo: Add Font Face support.
                     // Todo: Add Keyframe support.
                 });
@@ -179,7 +205,7 @@
         this.styles = new CSSStyleList();
         this.cstyle = new CSScriptStyle();
 
-        ColectedCSScript.push(this);
+        CollectedCSScripts.push(this);
 
         return this;
     }
@@ -441,12 +467,35 @@
     }
 
     /* Creating CSSMediaQueryRule Object */
-    var CSSMediaRule = function(csstring, query, selector) {
+    var CSSMediaRule = function(csstring, query) {
         this.cssText = csstring;
         this.queries = query;
         this.rules = new CSSRuleList();
 
         return this;
+    }
+
+    CSSMediaRule.prototype = {
+        parseMedia: function() {
+            var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo('head');
+            var qrhold = $('<div id="mqr-holder">').appendTo('body');
+
+            var qrhDefStyle = '#mqr-holder {\n\tposition: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}';
+            var qrhMedStyle = '#mqr-holder { width: 123px; }';
+            var qrhQuery = qrhDefStyle + '\n\n' + this.queries + '\n\t' + qrhMedStyle + '\n}';
+
+            qrwrap.html(qrhQuery);
+
+            if (qrhold.width() === 123) {
+                var csstyle = new CSSStylesheet('local-media', this.cssText.replace(this.queries, ''));
+                csstyle.parseRules();
+            }
+
+            qrwrap.remove();
+            qrhold.remove();
+
+            return this;
+        }
     }
 
     /* Creating CSSKeyframeRule Object */
@@ -481,6 +530,7 @@
 
     /* Reg Expression to Get CSS Block */
     var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g;
+    var RgmBlock = /[a-zA-Z\d\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g;
 
     /* Re-render styles when window resized */
     var windowresize = setTimeout(function() {}, 200);
@@ -488,7 +538,7 @@
         clearTimeout(windowresize);
 
         windowresize = setTimeout(function() {
-            foreach(ColectedCSScript, function (rule) {
+            foreach(CollectedCSScripts, function (rule) {
                 rule.render();
             });
         }, 200);
