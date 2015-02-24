@@ -19,10 +19,23 @@ Scripts should be inside `%()%` pattern. Currently we have param `$i` as index n
 By default, CSScript convert the CSSRule string to CSSRule object if contains CSScript pattern.
 If you want to convert all rules no matter they have CSScript pattern or not, please write config before loading the CSScript.
 
+**WARNING!** Converting all rules will takes load time on a big css.
+
+We also added `AutoRender` support for DOM insertion event. So, when some dom element inserted into document,
+CSSCript will re-render. We use animation to define insertion event since dom mutation event already deprecated.
+By default we turn this feature `off` for performance support. You can enable it by adding configs before loading CSScript.
+
+- `window.CSScriptExtractAll` - Extract all rules.
+- `window.CSScriptAutoRender` - Re-render styles when DOM element inserted into document.
+
 ###### Config sample
 ```html
 	<script type="text/javascript">
+		// Extract all rules.
 		window.CSScriptExtractAll = true;
+		
+		// Enable auto-render on DOM insertion.
+		window.CSScriptAutoRender = true;
 	</script>
 	<script type="text/javascript" src="csscript/dist/csscript.min.j"></script>
 ```
@@ -170,5 +183,6 @@ https://github.com/mahdaen/csscript
 
 
 ## Release History
+* 2015-02-24        v0.2.0      "Adding auto render on dom insertion event."
 * 2015-02-22        v0.1.0      "Adding Media Query support and Manual Render (for ajax or draw purpose)"
 * 2015-02-06        v0.0.1      "First release"

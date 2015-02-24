@@ -7,7 +7,7 @@
         $('<style type="text/css" id="csscript-holder">').appendTo("head"), $('link[rel="stylesheet"]').each(function() {
             var url = $(this).attr("href");
             if (isString(url)) $.get(url).success(function(cssString) {
-                cssString.search(/\%\(/) < 0 && !CSScriptExtractAll || (CollectedCSS.push({
+                !CSScriptExtractAll && cssString.search(/\%\(/) < 0 || (CollectedCSS.push({
                     css: cssString,
                     url: url
                 }), $.renderCSScript());
@@ -22,11 +22,22 @@
         });
     }, CollectedCSS = [];
     $.renderCSScript = function() {
-        $("#csscript-holder").html(" "), window.CSScriptLists.clean(), CollectedCSScripts = [], 
-        CSScriptCSS = "", foreach(CollectedCSS, function(CSSes) {
+        if ($("#csscript-holder").html(" "), window.CSScriptLists.clean(), CollectedCSScripts = [], 
+        CSScriptCSS = "", CSScriptTime = performance.now(), foreach(CollectedCSS, function(CSSes) {
             var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
             stylesheet.parseRules();
-        });
+        }), CSScriptAutoRender && "ready" !== CSScriptAutoRender) {
+            CSScriptAutoRender = "ready", $('<style id="dommutationlistener" type="text/css">').html(muframe).appendTo("head");
+            var xtm = setTimeout(function() {}, 0), mutationHandler = function() {
+                clearTimeout(xtm), xtm = setTimeout(function() {
+                    $.renderCSScript();
+                }, 20);
+            };
+            setTimeout(function() {
+                document.addEventListener("animationstart", mutationHandler, !1), document.addEventListener("MSAnimationStart", mutationHandler, !1), 
+                document.addEventListener("webkitAnimationStart", mutationHandler, !1);
+            }, 750);
+        }
     };
     var CollectedCSScripts = [], CSScriptLists = function() {
         return this.length = 0, this;
@@ -53,7 +64,7 @@
                 CSStext = CSStext.replace(/\(\s?\{/g, "(!$").replace(/\}\s?\)/g, "$!)");
                 var cssBlocks = CSStext.match(RgxBlock);
                 cssBlocks && foreach(cssBlocks, function(cssblock) {
-                    if (!(cssblock.search(/\%\(/) < 0) || CSScriptExtractAll) {
+                    if (CSScriptExtractAll || !(cssblock.search(/\%\(/) < 0)) {
                         cssblock = cssblock.replace(/\n+/, "");
                         var fst = cssblock.slice(0, 1);
                         if ("@" === fst) {
@@ -99,7 +110,7 @@
                     {
                         $rule.styles;
                     }
-                    foreach(cssdec, function(style) {
+                    if (foreach(cssdec, function(style) {
                         if ("" !== style) {
                             var style = style.replace(/\s+/g, " ").replace(/\s+/, ""), prop = style.match(/[\*a-zA-Z\-]+\:/);
                             if (prop && prop.length > 0) {
@@ -107,23 +118,36 @@
                                 prop = prop[0].replace(/\s+/g, "").replace(":", ""), value.search(/\%\(/) > -1 && value.search(/\)\%/) ? $rule.cstyle.push(prop, value) : $rule.styles.push(prop, value);
                             }
                         }
-                    }), render && $rule.render();
+                    }), render && $rule.render(), CSScriptExtractAll) {
+                        var now = performance.now();
+                        CSScriptTime = Math.round(now - CSScriptTime);
+                    }
                 }
             }
         },
         render: function() {
-            var $rule = this, $selector = this.selector, actions = (this.cstyle, [ "focus", "blur", "click", "mouseenter", "mouseleave", "change" ]);
-            return $selector.search(":") > -1 ? foreach(actions, function(pseudo) {
-                $selector.search(pseudo) < 0 || ($selector = $selector.replace(new RegExp("\\:" + pseudo, "g"), ""), 
-                $($selector).each(function(i) {
-                    this["_" + pseudo + "Style"] = $rule, this._evcol && $(this).unlisten("css" + pseudo), 
-                    $(this).listen("css" + pseudo, pseudo, function() {
-                        applyStyles.call(this, i, "_" + pseudo + "Style");
+            var $rule = this, $selector = this.selector, actions = (this.cstyle, [ "focus", "blur", "click", "mouseenter", "mouseleave", "change", "hover" ]);
+            if ($selector.search(":") > -1) foreach(actions, function(pseudo) {
+                if (!($selector.search(pseudo) < 0) && ($selector = $selector.replace(new RegExp("\\:" + pseudo, "g"), ""), 
+                $selector && "" !== $selector && " " !== $selector)) {
+                    var valid;
+                    try {
+                        valid = document.querySelectorAll($selector);
+                    } catch (err) {}
+                    valid && $($selector).each(function(i) {
+                        this["_" + pseudo + "Style"] = $rule, this._evcol && $(this).unlisten("css" + pseudo), 
+                        $(this).listen("css" + pseudo, pseudo, function() {
+                            applyStyles.call(this, i, "_" + pseudo + "Style");
+                        });
                     });
-                }));
-            }) : $($selector).each(function(i) {
-                this._regularStyle = $rule, applyStyles.call(this, i, "_regularStyle");
-            }), this;
+                }
+            }); else {
+                if ("" === $selector) return;
+                $($selector).each(function(i) {
+                    this._regularStyle = $rule, applyStyles.call(this, i, "_regularStyle");
+                });
+            }
+            return this;
         }
     };
     var applyStyles = function(i, groupd, inline) {
@@ -159,6 +183,8 @@
             var cssString = createCSS(selector + '[cssid="' + (this.getAttribute("cssid") || CSSID++) + '"]', $props);
             this._oldcss && CSScriptCSS.search(this._oldcss) > -1 ? CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString) : CSScriptCSS += cssString, 
             $("#csscript-holder").html(CSScriptCSS), this._oldcss = cssString;
+            var now = performance.now();
+            CSScriptTime = Math.round(now - CSScriptTime);
         }
         return $props;
     }, PrivateVariables = function() {
@@ -202,7 +228,7 @@
     };
     CSSMediaRule.prototype = {
         parseMedia: function() {
-            var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo("head"), qrhold = $('<div id="mqr-holder">').appendTo("body"), qrhDefStyle = "#mqr-holder {\n	position: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}", qrhMedStyle = "#mqr-holder { width: 123px; }", qrhQuery = qrhDefStyle + "\n\n" + this.queries + "\n	" + qrhMedStyle + "\n}";
+            var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo("head"), qrhold = $("<div mqr-holder>").appendTo("body"), qrhDefStyle = "[mqr-holder] {\n	position: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}", qrhMedStyle = "[mqr-holder] { width: 123px; }", qrhQuery = qrhDefStyle + "\n\n" + this.queries + "\n	" + qrhMedStyle + "\n}";
             if (qrwrap.html(qrhQuery), 123 === qrhold.width()) {
                 var csstyle = new CSSStylesheet("local-media", this.cssText.replace(this.queries, ""));
                 csstyle.parseRules();
@@ -216,10 +242,12 @@
     }, CSSFontRule = function(csstring, selector) {
         return this.cssText = csstring, this.selector = selector, this.styles = new CSSStyleList(), 
         this;
-    };
+    }, muframe = "@-webkit-keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n";
+    muframe += "@keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n", 
+    muframe += "body *:not([mqr-holder]) { -webkit-animation: dommutationlistener 0s linear; animation: dommutationlistener 0s linear; }", 
     window.CSScriptVariables = {};
-    var CSScriptCSS = "", CSSID = 0;
-    window.CSScriptExtractAll = !1;
+    var CSScriptCSS = "", CSSID = 0, CSScriptTime = new Date().getTime();
+    window.CSScriptExtractAll || (window.CSScriptExtractAll = !1), window.CSScriptAutoRender || (window.CSScriptAutoRender = !1);
     var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g, RgmBlock = /[a-zA-Z\d\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g, windowresize = setTimeout(function() {}, 200);
     window.addEventListener("resize", function() {
         clearTimeout(windowresize), windowresize = setTimeout(function() {

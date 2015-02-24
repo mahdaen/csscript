@@ -19,7 +19,7 @@
 
             if (isString(url)) {
                 $.get(url).success(function(cssString) {
-                    if (cssString.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
+                    if (!CSScriptExtractAll && cssString.search(/\%\(/) < 0) return;
 
                     CollectedCSS.push({ css: cssString, url: url });
 
@@ -49,11 +49,17 @@
         /* Cleanup Rendered Styles */
         $('#csscript-holder').html(' ');
 
+        /* Clean CSScript Lists */
         window.CSScriptLists.clean();
 
+        /* Clean Collected CSScript */
         CollectedCSScripts = [];
 
+        /* Clean CSS String */
         CSScriptCSS = '';
+
+        /* Performance Holder */
+        CSScriptTime = performance.now();
 
         /* Parsing Collected CSS */
         foreach(CollectedCSS, function (CSSes) {
@@ -63,6 +69,33 @@
             /* Extracting CSS Rules */
             stylesheet.parseRules();
         });
+
+        if (CSScriptAutoRender) {
+            if (CSScriptAutoRender !== 'ready') {
+                CSScriptAutoRender = 'ready';
+
+                $('<style id="dommutationlistener" type="text/css">').html(muframe).appendTo('head');
+
+                var xtm = setTimeout(function() {}, 0);
+
+                var mutationHandler = function(e) {
+                    clearTimeout(xtm);
+
+                    xtm = setTimeout(function() {
+                        $.renderCSScript();
+                    }, 20);
+                }
+
+                /* DOM Insertsion Event */
+                setTimeout(function() {
+                    document.addEventListener('animationstart', mutationHandler, false);
+                    document.addEventListener('MSAnimationStart', mutationHandler, false);
+                    document.addEventListener('webkitAnimationStart', mutationHandler, false);
+                }, 750);
+            }
+        }
+
+        //console.log('CSScript loaded in ' + CSScriptTime + 'ms');
     }
 
     /* Collected CSScript Holder*/
@@ -123,7 +156,7 @@
             if (cssBlocks) {
                 foreach(cssBlocks, function (cssblock) {
                     /* Don't proceed if extract all is disabled and css not contains js pattern */
-                    if (cssblock.search(/\%\(/) < 0 && !CSScriptExtractAll) return;
+                    if (!CSScriptExtractAll && cssblock.search(/\%\(/) < 0) return;
 
                     /* Replacing new line at begining */
                     cssblock = cssblock.replace(/\n+/, '');
@@ -272,6 +305,13 @@
 
                     // Todo: Add oncheck support.
                 }
+
+                if (CSScriptExtractAll) {
+                    /* Increasing Performance */
+                    var now = performance.now();
+
+                    CSScriptTime = Math.round(now - CSScriptTime);
+                }
             }
         },
 
@@ -279,7 +319,7 @@
         render: function() {
             var $rule = this, $selector = this.selector, $scripts = this.cstyle;
 
-            var actions = ['focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change'];
+            var actions = ['focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change', 'hover'];
 
             /* If has pseudo, check the event type and listen the event */
             if ($selector.search(':') > -1) {
@@ -289,6 +329,21 @@
 
                     /* Removing pseudo from selector */
                     $selector = $selector.replace(new RegExp('\\:' + pseudo, 'g'), '');
+
+                    // Escape if selector is empty.
+                    if (!$selector || $selector === '' || $selector === ' ') return;
+
+                    // Validate selector.
+                    var valid;
+
+                    try {
+                        valid = document.querySelectorAll($selector);
+                    } catch (err) {
+                        //console.error('Invalid selector: ' + $selector);
+                    }
+
+                    /* Return if selector is invalid */
+                    if (!valid) return;
 
                     $($selector).each(function(i) {
                         /* Adding Selector to this element */
@@ -309,6 +364,8 @@
 
             /* Apply directly if no pseudo in selector */
             else {
+                if ($selector === '') return;
+
                 $($selector).each(function(i) {
                     /* Adding Selector to this element */
                     this._regularStyle = $rule;
@@ -407,6 +464,11 @@
 
                 /* Replace current CSS String */
                 this._oldcss = cssString;
+
+                /* Increasing Performance */
+                var now = performance.now();
+
+                CSScriptTime = Math.round(now - CSScriptTime);
             }
         }
 
@@ -478,10 +540,10 @@
     CSSMediaRule.prototype = {
         parseMedia: function() {
             var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo('head');
-            var qrhold = $('<div id="mqr-holder">').appendTo('body');
+            var qrhold = $('<div mqr-holder>').appendTo('body');
 
-            var qrhDefStyle = '#mqr-holder {\n\tposition: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}';
-            var qrhMedStyle = '#mqr-holder { width: 123px; }';
+            var qrhDefStyle = '[mqr-holder] {\n\tposition: fixed; top: 0; left: 0; height: 0; z-index: -1; width: 0;\n}';
+            var qrhMedStyle = '[mqr-holder] { width: 123px; }';
             var qrhQuery = qrhDefStyle + '\n\n' + this.queries + '\n\t' + qrhMedStyle + '\n}';
 
             qrwrap.html(qrhQuery);
@@ -516,6 +578,11 @@
         return this;
     }
 
+    /* Animation to replace DOM Mutaion event */
+    var muframe  = '@-webkit-keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
+    muframe     += '@keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
+    muframe     += 'body *:not([mqr-holder]) { -webkit-animation: dommutationlistener 0s linear; animation: dommutationlistener 0s linear; }';
+
     /* CSScript Variable Holders */
     window.CSScriptVariables = {};
 
@@ -525,8 +592,17 @@
     /* CSS ID */
     var CSSID = 0;
 
+    /* Performance Holder */
+    var CSScriptTime = new Date().getTime();
+
     /* Config does all css parsed or only that contains CSScript */
-    window.CSScriptExtractAll = false;
+    if (!window.CSScriptExtractAll) {
+        window.CSScriptExtractAll = false;
+    }
+
+    if (!window.CSScriptAutoRender) {
+        window.CSScriptAutoRender = false;
+    }
 
     /* Reg Expression to Get CSS Block */
     var RgxBlock = /[a-zA-Z\d\@\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g;
