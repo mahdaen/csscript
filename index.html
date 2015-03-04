@@ -27,17 +27,21 @@
         </ul>
       </header>
       <section>
-        <p>Inline <code>css</code> script runner. Use <code>javascript</code> to define <code>css</code> value or eval script directly via css.
-<strong>CSS Script</strong> is <a href="https://github.com/mahdaen/domlist">DOMList</a> extension.
-To makes <strong>CSS Script</strong> working, you should load it after loading DOMList.</p>
+        <h1>
+<a id="css-script" class="anchor" href="#css-script" aria-hidden="true"><span class="octicon octicon-link"></span></a>CSS Script</h1>
+
+<p>Inline <code>css</code> script runner. Use <code>javascript</code> to define <code>css</code> value or eval script directly via css.
+<strong>CSS Script</strong> is <a href="https://github.com/mahdaen/domlist">DOMList</a> and <strong>jQuery</strong> extension.
+To makes <strong>CSS Script</strong> working, you should load it after loading DOMList.
+If you want to use <strong>jQUery</strong>, then you must load <a href="https://github.com/mahdaen/jqpatch">jQPatch</a> before load this. </p>
 
 <h3>
 <a id="syntax" class="anchor" href="#syntax" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Syntax</strong>
 </h3>
 
-<blockquote>
+<hr>
+
 <p><code>cssproperty: '%(SCRIPT)%';</code></p>
-</blockquote>
 
 <p>Scripts should be inside <code>%()%</code> pattern. Currently we have param <code>$i</code> as index number of selected element.</p>
 
@@ -45,14 +49,33 @@ To makes <strong>CSS Script</strong> working, you should load it after loading D
 <a id="configs" class="anchor" href="#configs" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>CONFIGS</strong>
 </h3>
 
+<hr>
+
 <p>By default, CSScript convert the CSSRule string to CSSRule object if contains CSScript pattern.
 If you want to convert all rules no matter they have CSScript pattern or not, please write config before loading the CSScript.</p>
+
+<p><strong>WARNING!</strong> Converting all rules will takes load time on a big css.</p>
+
+<p>We also added <code>AutoRender</code> support for DOM insertion event. So, when some dom element inserted into document,
+CSSCript will re-render. We use animation to define insertion event since dom mutation event already deprecated.
+By default we turn this feature <code>off</code> for performance support. You can enable it by adding configs before loading CSScript.</p>
+
+<ul>
+<li>
+<code>window.CSScriptExtractAll</code> - Extract all rules.</li>
+<li>
+<code>window.CSScriptAutoRender</code> - Re-render styles when DOM element inserted into document.</li>
+</ul>
 
 <h6>
 <a id="config-sample" class="anchor" href="#config-sample" aria-hidden="true"><span class="octicon octicon-link"></span></a>Config sample</h6>
 
 <div class="highlight highlight-html"><pre><span class="pl-s2">    &lt;<span class="pl-ent">script</span> <span class="pl-e">type</span>=<span class="pl-s1"><span class="pl-pds">"</span>text/javascript<span class="pl-pds">"</span></span>&gt;</span>
+<span class="pl-s2">        <span class="pl-c">// Extract all rules.</span></span>
 <span class="pl-s2">        <span class="pl-s3">window</span>.CSScriptExtractAll <span class="pl-k">=</span> <span class="pl-c1">true</span>;</span>
+<span class="pl-s2"></span>
+<span class="pl-s2">        <span class="pl-c">// Enable auto-render on DOM insertion.</span></span>
+<span class="pl-s2">        <span class="pl-s3">window</span>.CSScriptAutoRender <span class="pl-k">=</span> <span class="pl-c1">true</span>;</span>
 <span class="pl-s2">    &lt;/<span class="pl-ent">script</span>&gt;</span>
 <span class="pl-s2">    &lt;<span class="pl-ent">script</span> <span class="pl-e">type</span>=<span class="pl-s1"><span class="pl-pds">"</span>text/javascript<span class="pl-pds">"</span></span> <span class="pl-e">src</span>=<span class="pl-s1"><span class="pl-pds">"</span>csscript/dist/csscript.min.j<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">script</span>&gt;</span></pre></div>
 
@@ -62,7 +85,9 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Download</strong>
 </h4>
 
-<p>You can get <code>**CSScript**</code> by choosing download above or using:</p>
+<hr>
+
+<p>You can get <strong>CSScript</strong> by choosing download above or using:</p>
 
 <pre><code>npm install csscript
 </code></pre>
@@ -76,17 +101,49 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 <a id="todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>
 <strong>TODO</strong>:</h4>
 
+<hr>
+
 <ul>
-<li>Add Media Query Support</li>
 <li>Add Font Face Support</li>
 <li>Add Keyframes Support</li>
-<li>Add events support. Currently only support with <code>:click</code>, <code>:hover</code> and <code>:focus</code> event and automatically re-render when window resized.</li>
-<li>Add ajax loaded support.</li>
+<li>Add more events support.</li>
+</ul>
+
+<h4>
+<a id="supported-events" class="anchor" href="#supported-events" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Supported Events</strong>
+</h4>
+
+<hr>
+
+<ul>
+<li><code>click</code></li>
+<li><code>hover</code></li>
+<li><code>mouseenter</code></li>
+<li><code>mouseleave</code></li>
+<li><code>focus</code></li>
+<li><code>blur</code></li>
+<li><code>change</code></li>
+</ul>
+
+<h4>
+<a id="inline-params" class="anchor" href="#inline-params" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Inline Params</strong>
+</h4>
+
+<hr>
+
+<ul>
+<li>
+<code>$i</code> as index number of current element.</li>
+<li>
+<code>@</code> as <code>var</code> to define variable. e.g: <code>@winHeight = window.innerHeight</code> is equal to <code>var winHeight = window.innerHeight</code>
+</li>
 </ul>
 
 <h3>
 <a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Examples</strong>
 </h3>
+
+<hr>
 
 <div class="highlight highlight-html"><pre>&lt;<span class="pl-ent">html</span>&gt;
     &lt;<span class="pl-ent">head</span>&gt;
@@ -101,6 +158,11 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
                     &lt;<span class="pl-ent">div</span> <span class="pl-e">class</span>=<span class="pl-s1"><span class="pl-pds">"</span>only-mobile<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">div</span>&gt;
                 &lt;/<span class="pl-ent">div</span>&gt;
             &lt;/<span class="pl-ent">div</span>&gt;
+        &lt;/<span class="pl-ent">div</span>&gt;
+        &lt;<span class="pl-ent">div</span> <span class="pl-e">class</span>=<span class="pl-s1"><span class="pl-pds">"</span>fit-list<span class="pl-pds">"</span></span>&gt;
+            &lt;<span class="pl-ent">div</span> <span class="pl-e">class</span>=<span class="pl-s1"><span class="pl-pds">"</span>fill<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">div</span>&gt;
+            &lt;<span class="pl-ent">div</span> <span class="pl-e">class</span>=<span class="pl-s1"><span class="pl-pds">"</span>fill<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">div</span>&gt;
+            &lt;<span class="pl-ent">div</span> <span class="pl-e">class</span>=<span class="pl-s1"><span class="pl-pds">"</span>fill<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">div</span>&gt;
         &lt;/<span class="pl-ent">div</span>&gt;
     &lt;/<span class="pl-ent">body</span>&gt;
 &lt;/<span class="pl-ent">html</span>&gt;</pre></div>
@@ -132,15 +194,71 @@ If you want to convert all rules no matter they have CSScript pattern or not, pl
 // Run javascripts.
 <span class="pl-e">.container-content</span>:click {
     <span class="pl-mp">scripts</span>: <span class="pl-s1"><span class="pl-pds">'</span>%($(".container").toggleClass("content-hovered"))%<span class="pl-pds">'</span></span>;
+}
+
+// Create element that has dynamic height depend on childrens length on parent element.
+<span class="pl-e">.fit-list</span> {
+    <span class="pl-mp"><span class="pl-s3">display</span></span>: <span class="pl-sc">block</span>;
+    <span class="pl-mp"><span class="pl-s3">width</span></span>: <span class="pl-c1">100<span class="pl-k">%</span></span>;
+    <span class="pl-mp"><span class="pl-s3">height</span></span>: <span class="pl-s1"><span class="pl-pds">'</span>%( window.innerHeight )%<span class="pl-pds">'</span></span>;
+}
+<span class="pl-e">.fit-list</span> <span class="pl-e">.fill</span> {
+    // G<span class="pl-mp">et</span> <span class="pl-mp">the</span> <span class="pl-mp">parent</span> <span class="pl-mp">element</span> <span class="pl-mp">childrens</span> <span class="pl-mp"><span class="pl-s3">length</span></span>.
+    <span class="pl-mp">script</span>: <span class="pl-s1"><span class="pl-pds">'</span>%( @flChilds = $(this).parent().children().length )%<span class="pl-pds">'</span></span>;
+
+    // G<span class="pl-mp">et</span> <span class="pl-mp">the</span> <span class="pl-mp"><span class="pl-s3">height</span></span> <span class="pl-mp">by</span> <span class="pl-mp">counting</span> <span class="pl-mp">total</span> <span class="pl-mp"><span class="pl-s3">height</span></span> <span class="pl-mp">with</span> <span class="pl-mp">total</span> <span class="pl-mp">childrens</span>.
+    <span class="pl-mp">script</span>: <span class="pl-s1"><span class="pl-pds">'</span>%( @clHeight = (window.innerHeight / @flChilds) )%<span class="pl-pds">'</span></span>;
+
+    <span class="pl-mp"><span class="pl-s3">display</span></span>: <span class="pl-sc">block</span>;
+    <span class="pl-mp"><span class="pl-s3">width</span></span>: <span class="pl-c1">100<span class="pl-k">%</span></span>;
+    <span class="pl-mp"><span class="pl-s3">height</span></span>: <span class="pl-s1"><span class="pl-pds">'</span>%( @clHeight )%<span class="pl-pds">'</span></span>; // U<span class="pl-mp">sing</span> @<span class="pl-mp">cl</span>H<span class="pl-mp">eight</span>
+}
+
+// Use with media query.
+<span class="pl-k">@media</span> <span class="pl-k">only</span> <span class="pl-sc">screen</span> <span class="pl-k">and</span> (<span class="pl-s3">max-width</span>: <span class="pl-c1">1024</span>) {
+    <span class="pl-e">.fit-list</span> {
+        <span class="pl-mp">script</span>: <span class="pl-s1"><span class="pl-pds">'</span>%( $(this).appendTo(".container-content") )%<span class="pl-pds">'</span></span>;
+    }
 }</pre></div>
+
+<h3>
+<a id="manual-render" class="anchor" href="#manual-render" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Manual Render</strong>
+</h3>
+
+<hr>
+
+<p>Use <code>$.renderCSScript()</code> to re-render the styles.
+Usually, it's usefull when you want to use <code>CSScript</code> after loading ajax or drawing new element.</p>
+
+<h5>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>Example</code>
+</h5>
+
+<div class="highlight highlight-js"><pre>$.ajax(<span class="pl-s1"><span class="pl-pds">'</span>http://localhost<span class="pl-pds">'</span></span>).<span class="pl-sc">complete</span>(<span class="pl-st">function</span>(<span class="pl-vpf">data</span>) {
+    $(<span class="pl-s1"><span class="pl-pds">'</span>.content<span class="pl-pds">'</span></span>).append(data);
+
+    <span class="pl-c">// Re-render styles after ajax complete and inserting content complete.</span>
+    $.renderCSScript();
+});</pre></div>
 
 <h3>
 <a id="notes" class="anchor" href="#notes" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>NOTES</strong>
 </h3>
 
+<hr>
+
 <p>This project is under development. Use it if you want to give a try.
 If you want to contribute to this project, I say thanks. :)
 <a href="https://github.com/mahdaen/csscript">https://github.com/mahdaen/csscript</a></p>
+
+<h2>
+<a id="release-history" class="anchor" href="#release-history" aria-hidden="true"><span class="octicon octicon-link"></span></a>Release History</h2>
+
+<ul>
+<li>2015-02-24        v0.2.0      "Adding auto render on dom insertion event."</li>
+<li>2015-02-22        v0.1.0      "Adding Media Query support and Manual Render (for ajax or draw purpose)"</li>
+<li>2015-02-06        v0.0.1      "First release"</li>
+</ul>
       </section>
     </div>
     <footer>
