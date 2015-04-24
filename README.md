@@ -183,6 +183,7 @@ https://github.com/mahdaen/csscript
 
 
 ## Release History
+* 2015-04-24        v0.3.0      "Adding support to render minified css."
 * 2015-02-24        v0.2.0      "Adding auto render on dom insertion event."
 * 2015-02-22        v0.1.0      "Adding Media Query support and Manual Render (for ajax or draw purpose)"
 * 2015-02-06        v0.0.1      "First release"

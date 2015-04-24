@@ -7,13 +7,15 @@
         $('<style type="text/css" id="csscript-holder">').appendTo("head"), $('link[rel="stylesheet"]').each(function() {
             var url = $(this).attr("href");
             if (isString(url)) $.get(url).success(function(cssString) {
-                !CSScriptExtractAll && cssString.search(/\%\(/) < 0 || (CollectedCSS.push({
+                cssString = cssString.replace(/\{/g, "{\r\n"), cssString = cssString.replace(/\}/g, "\r\n}\r\n"), 
+                cssString = cssString.replace(/[\r\n]+/g, "\r\n"), !CSScriptExtractAll && cssString.search(/\%\(/) < 0 || (CollectedCSS.push({
                     css: cssString,
                     url: url
                 }), $.renderCSScript());
             }); else {
                 var html = $(this).html();
-                if (html.search(/\%\(/) < 0) return;
+                if (html = html.replace(/\{/g, "{\r\n"), html = html.replace(/\}/g, "\r\n}\r\n"), 
+                html = html.replace(/[\r\n]+/g, "\r\n"), html.search(/\%\(/) < 0) return;
                 html.length > 10 && (CollectedCSS.push({
                     css: html,
                     url: "local"

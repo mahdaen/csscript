@@ -19,6 +19,10 @@
 
             if (isString(url)) {
                 $.get(url).success(function(cssString) {
+                    cssString = cssString.replace(/\{/g, '{\r\n');
+                    cssString = cssString.replace(/\}/g, '\r\n}\r\n');
+                    cssString = cssString.replace(/[\r\n]+/g, '\r\n');
+
                     if (!CSScriptExtractAll && cssString.search(/\%\(/) < 0) return;
 
                     CollectedCSS.push({ css: cssString, url: url });
@@ -29,6 +33,10 @@
 
             else {
                 var html = $(this).html();
+
+                html = html.replace(/\{/g, '{\r\n');
+                html = html.replace(/\}/g, '\r\n}\r\n');
+                html = html.replace(/[\r\n]+/g, '\r\n');
 
                 if (html.search(/\%\(/) < 0) return;
 
