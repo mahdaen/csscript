@@ -1,5 +1,10 @@
 !function($) {
     "use strict";
+    if (!window.performance) var performance = {
+        now: function() {
+            return new Date().getMilliseconds();
+        }
+    };
     document.addEventListener("readystatechange", function() {
         "interactive" === document.readyState && setTimeout(initParser, 0);
     });

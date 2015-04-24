@@ -1,6 +1,14 @@
 (function($) {
     'use strict';
 
+    if (!window.performance) {
+        var performance = {
+            now: function() {
+                return new Date().getMilliseconds();
+            }
+        }
+    }
+
     /* Parse all Stylesheets when document ready */
     document.addEventListener('readystatechange', function() {
         if (document.readyState === 'interactive') {
