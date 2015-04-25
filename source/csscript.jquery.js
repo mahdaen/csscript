@@ -22,7 +22,7 @@
 
         css = css
             .split('\t').join('    ')
-            .replace(/\s*{\s*/g, ' {\n    ')
+            .replace(/\s*\{\s*/g, ' {\n    ')
             .replace(/;\s*/g, ';\n    ')
             .replace(/,\s*/g, ', ')
             .replace(/[ ]*}\s*/g, '}\n')
@@ -96,12 +96,16 @@
         CSScriptTime = performance.now();
 
         /* Parsing Collected CSS */
-        foreach(CollectedCSS, function (CSSes) {
+        foreach(CollectedCSS, function (CSSes, i) {
             /* Creating New Stylesheet */
             var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
 
             /* Extracting CSS Rules */
             stylesheet.parseRules();
+
+            if (i == (CollectedCSS.length - 1)) {
+                $('body').remAttr('cssunloaded');
+            }
         });
 
         if ( CSScriptAutoRender ) {
@@ -205,7 +209,7 @@
 
                         if ( cssblock.search('@media') > -1 ) {
                             /* Don't proceed until to do complete */
-                            var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+                            var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\_\:\(\)\#\*\[\]\=\"\']+\{/);
 
                             if ( media ) {
                                 var mediarule = new CSSMediaRule(cssblock, media[ 0 ]);
@@ -284,7 +288,7 @@
             var $rule = this, cssText = this.cssText, selector;
 
             /* Getting Selector */
-            selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+            selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\_\:\(\)\#\*\[\]\=\"\']+\{/);
 
             /* Escape if no selector */
             if ( !selector ) return;

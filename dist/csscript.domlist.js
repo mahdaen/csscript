@@ -9,7 +9,7 @@
     });
     var decompress = function(css) {
         var tab = 4, space = "";
-        if (css = css.split("	").join("    ").replace(/\s*{\s*/g, " {\n    ").replace(/;\s*/g, ";\n    ").replace(/,\s*/g, ", ").replace(/[ ]*}\s*/g, "}\n").replace(/\}\s*(.+)/g, "}\n$1").replace(/\n    ([^:]+):\s*/g, "\n    $1: ").replace(/([A-z0-9\)])}/g, "$1;\n}"), 
+        if (css = css.split("	").join("    ").replace(/\s*\{\s*/g, " {\n    ").replace(/;\s*/g, ";\n    ").replace(/,\s*/g, ", ").replace(/[ ]*}\s*/g, "}\n").replace(/\}\s*(.+)/g, "}\n$1").replace(/\n    ([^:]+):\s*/g, "\n    $1: ").replace(/([A-z0-9\)])}/g, "$1;\n}"), 
         4 != tab) {
             for (;0 != tab; tab--) space += " ";
             css = cssString.replace(/\n    /g, "\n" + space);
@@ -35,9 +35,9 @@
     }, CollectedCSS = [];
     $.renderCSScript = function() {
         if ($("#csscript-holder").html(" "), window.CSScriptLists.clean(), CollectedCSScripts = [], 
-        CSScriptCSS = "", CSScriptTime = performance.now(), foreach(CollectedCSS, function(CSSes) {
+        CSScriptCSS = "", CSScriptTime = performance.now(), foreach(CollectedCSS, function(CSSes, i) {
             var stylesheet = new CSSStylesheet(CSSes.url, CSSes.css);
-            stylesheet.parseRules();
+            stylesheet.parseRules(), i == CollectedCSS.length - 1 && $("body").remAttr("cssunloaded");
         }), CSScriptAutoRender && "ready" !== CSScriptAutoRender) {
             CSScriptAutoRender = "ready", $('<style id="dommutationlistener" type="text/css">').html(muframe).appendTo("head");
             var xtm = setTimeout(function() {}, 0), mutationHandler = function() {
@@ -81,7 +81,7 @@
                         var fst = cssblock.slice(0, 1);
                         if ("@" === fst) {
                             if (cssblock.search(/^\@/) > -1 && (cssblock += "}"), cssblock.search("@media") > -1) {
-                                var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
+                                var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\_\:\(\)\#\*\[\]\=\"\']+\{/);
                                 if (media) {
                                     var mediarule = new CSSMediaRule(cssblock, media[0]);
                                     mediarule.parseMedia();
@@ -114,7 +114,7 @@
     CSSStyleRule.prototype = {
         parseStyles: function(render) {
             var selector, $rule = this, cssText = this.cssText;
-            if (selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/)) {
+            if (selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\_\:\(\)\#\*\[\]\=\"\']+\{/)) {
                 $rule.type = "CSSStyleRule";
                 var cssdec = cssText.replace(selector[0], "").replace("}", "").replace(/\n+/g, "");
                 if (selector = selector[0].replace(/\s?\{/, "").replace(/\n/g, " "), $rule.selector = selector, 
