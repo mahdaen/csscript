@@ -7,21 +7,27 @@
     }), document.addEventListener("readystatechange", function() {
         "interactive" === document.readyState && setTimeout(initParser, 0);
     });
-    var initParser = function() {
+    var decompress = function(css) {
+        var tab = 4, space = "";
+        if (css = css.split("	").join("    ").replace(/\s*{\s*/g, " {\n    ").replace(/;\s*/g, ";\n    ").replace(/,\s*/g, ", ").replace(/[ ]*}\s*/g, "}\n").replace(/\}\s*(.+)/g, "}\n$1").replace(/\n    ([^:]+):\s*/g, "\n    $1: ").replace(/([A-z0-9\)])}/g, "$1;\n}"), 
+        4 != tab) {
+            for (;0 != tab; tab--) space += " ";
+            css = cssString.replace(/\n    /g, "\n" + space);
+        }
+        return css;
+    }, initParser = function() {
         $('<style type="text/css" id="csscript-holder">').appendTo("head"), $('link[rel="stylesheet"]').each(function() {
             var url = $(this).attr("href");
             if (isString(url)) $.get(url).success(function(cssString) {
-                cssString = cssString.replace(/\{/g, "{\r\n"), cssString = cssString.replace(/\}/g, "\r\n}\r\n"), 
-                cssString = cssString.replace(/[\r\n]+/g, "\r\n"), !CSScriptExtractAll && cssString.search(/\%\(/) < 0 || (CollectedCSS.push({
+                cssString = decompress(cssString), !CSScriptExtractAll && cssString.search(/\%\(/) < 0 || (CollectedCSS.push({
                     css: cssString,
                     url: url
                 }), $.renderCSScript());
             }); else {
-                var html = $(this).html();
-                if (html = html.replace(/\{/g, "{\r\n"), html = html.replace(/\}/g, "\r\n}\r\n"), 
-                html = html.replace(/[\r\n]+/g, "\r\n"), html.search(/\%\(/) < 0) return;
-                html.length > 10 && (CollectedCSS.push({
-                    css: html,
+                var cssString = $(this).html();
+                if (cssString = decompress(cssString), cssString.search(/\%\(/) < 0) return;
+                cssString.length > 10 && (CollectedCSS.push({
+                    css: cssString,
                     url: "local"
                 }), $.renderCSScript());
             }

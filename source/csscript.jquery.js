@@ -1,55 +1,73 @@
-(function($) {
+(function ($) {
     'use strict';
 
-    if (!window.performance) {
+    if ( !window.performance ) {
         window.performance = {
-            now: function() {
+            now : function () {
                 return new Date().getMilliseconds();
             }
         }
     }
 
     /* Parse all Stylesheets when document ready */
-    document.addEventListener('readystatechange', function() {
-        if (document.readyState === 'interactive') {
+    document.addEventListener('readystatechange', function () {
+        if ( document.readyState === 'interactive' ) {
             setTimeout(initParser, 0);
         }
     });
 
+    /* Unminify */
+    var decompress = function (css) {
+        var tab = 4, space = '';
+
+        css = css
+            .split('\t').join('    ')
+            .replace(/\s*{\s*/g, ' {\n    ')
+            .replace(/;\s*/g, ';\n    ')
+            .replace(/,\s*/g, ', ')
+            .replace(/[ ]*}\s*/g, '}\n')
+            .replace(/\}\s*(.+)/g, '}\n$1')
+            .replace(/\n    ([^:]+):\s*/g, '\n    $1: ')
+            .replace(/([A-z0-9\)])}/g, '$1;\n}');
+
+        if ( tab != 4 ) {
+            for ( ; tab != 0; tab-- ) { space += ' '; }
+            css = cssString.replace(/\n    /g, '\n' + space);
+        }
+
+        return css;
+    }
+
     /* Parser Initializer */
-    var initParser = function() {
+    var initParser = function () {
         /* Creating Generated CSS Holder */
         $('<style type="text/css" id="csscript-holder">').appendTo('head');
 
         /* Get CSS Link elements and iterate them */
-        $('link[rel="stylesheet"]').each(function() {
+        $('link[rel="stylesheet"]').each(function () {
             var url = $(this).attr('href');
 
-            if (isString(url)) {
-                $.get(url).success(function(cssString) {
-                    cssString = cssString.replace(/\{/g, '{\r\n');
-                    cssString = cssString.replace(/\}/g, '\r\n}\r\n');
-                    cssString = cssString.replace(/[\r\n]+/g, '\r\n');
+            if ( isString(url) ) {
+                $.get(url).success(function (cssString) {
+                    cssString = decompress(cssString);
 
-                    if (!CSScriptExtractAll && cssString.search(/\%\(/) < 0) return;
+                    if ( !CSScriptExtractAll && cssString.search(/\%\(/) < 0 ) return;
 
-                    CollectedCSS.push({ css: cssString, url: url });
+                    CollectedCSS.push({ css : cssString, url : url });
 
                     $.renderCSScript();
                 });
             }
 
             else {
-                var html = $(this).html();
+                var cssString = $(this).html();
 
-                html = html.replace(/\{/g, '{\r\n');
-                html = html.replace(/\}/g, '\r\n}\r\n');
-                html = html.replace(/[\r\n]+/g, '\r\n');
+                cssString = decompress(cssString);
 
-                if (html.search(/\%\(/) < 0) return;
+                if ( cssString.search(/\%\(/) < 0 ) return;
 
-                if (html.length > 10) {
-                    CollectedCSS.push({ css: html, url: 'local'})
+                if ( cssString.length > 10 ) {
+                    CollectedCSS.push({ css : cssString, url : 'local' })
 
                     $.renderCSScript();
                 }
@@ -61,7 +79,7 @@
     var CollectedCSS = [];
 
     /* Creating Parser */
-    $.renderCSScript = function() {
+    $.renderCSScript = function () {
         /* Cleanup Rendered Styles */
         $('#csscript-holder').html(' ');
 
@@ -86,24 +104,24 @@
             stylesheet.parseRules();
         });
 
-        if (CSScriptAutoRender) {
-            if (CSScriptAutoRender !== 'ready') {
+        if ( CSScriptAutoRender ) {
+            if ( CSScriptAutoRender !== 'ready' ) {
                 CSScriptAutoRender = 'ready';
 
                 $('<style id="dommutationlistener" type="text/css">').html(muframe).appendTo('head');
 
-                var xtm = setTimeout(function() {}, 0);
+                var xtm = setTimeout(function () {}, 0);
 
-                var mutationHandler = function(e) {
+                var mutationHandler = function (e) {
                     clearTimeout(xtm);
 
-                    xtm = setTimeout(function() {
+                    xtm = setTimeout(function () {
                         $.renderCSScript();
                     }, 20);
                 }
 
                 /* DOM Insertsion Event */
-                setTimeout(function() {
+                setTimeout(function () {
                     document.addEventListener('animationstart', mutationHandler, false);
                     document.addEventListener('MSAnimationStart', mutationHandler, false);
                     document.addEventListener('webkitAnimationStart', mutationHandler, false);
@@ -118,24 +136,24 @@
     var CollectedCSScripts = [];
 
     /* Creating CSSList Objects */
-    var CSScriptLists = function() {
+    var CSScriptLists = function () {
         this.length = 0;
 
         return this;
     }
 
     CSScriptLists.prototype = {
-        push: function(obj) {
-            this[this.length] = obj;
+        push  : function (obj) {
+            this[ this.length ] = obj;
             this.length = (this.length + 1);
 
             return this;
         },
-        clean: function() {
+        clean : function () {
             var $this = this;
 
             foreach($this, function (a, i) {
-                delete $this[i];
+                delete $this[ i ];
                 $this.length--;
             });
 
@@ -146,7 +164,7 @@
     window.CSScriptLists = new CSScriptLists();
 
     /* Creating CSSStylesheet Objects */
-    var CSSStylesheet = function(url, cssText) {
+    var CSSStylesheet = function (url, cssText) {
         this.href = url;
         this.cssText = cssText;
         this.rules = new CSSRuleList();
@@ -158,8 +176,8 @@
 
     CSSStylesheet.prototype = {
         /* Extract CSSRules from this CSS Text */
-        parseRules: function() {
-            if (!this.cssText || !this.href) return;
+        parseRules : function () {
+            if ( !this.cssText || !this.href ) return;
 
             var CSStext = this.cssText, URL = this.href, $stylesheet = this;
 
@@ -169,10 +187,10 @@
             /* Getting CSS Blocks */
             var cssBlocks = CSStext.match(RgxBlock);
 
-            if (cssBlocks) {
+            if ( cssBlocks ) {
                 foreach(cssBlocks, function (cssblock) {
                     /* Don't proceed if extract all is disabled and css not contains js pattern */
-                    if (!CSScriptExtractAll && cssblock.search(/\%\(/) < 0) return;
+                    if ( !CSScriptExtractAll && cssblock.search(/\%\(/) < 0 ) return;
 
                     /* Replacing new line at begining */
                     cssblock = cssblock.replace(/\n+/, '');
@@ -181,27 +199,27 @@
                     var fst = cssblock.slice(0, 1);
 
                     /* If special selector, check the selector type */
-                    if (fst === '@') {
+                    if ( fst === '@' ) {
                         /* Fixing Block issue when block started with @ */
-                        if (cssblock.search(/^\@/) > -1) cssblock += '}';
+                        if ( cssblock.search(/^\@/) > -1 ) cssblock += '}';
 
-                        if (cssblock.search('@media') > -1) {
+                        if ( cssblock.search('@media') > -1 ) {
                             /* Don't proceed until to do complete */
                             var media = cssblock.match(/\@[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
 
-                            if (media) {
-                                var mediarule = new CSSMediaRule(cssblock, media[0]);
+                            if ( media ) {
+                                var mediarule = new CSSMediaRule(cssblock, media[ 0 ]);
                                 mediarule.parseMedia();
                             }
 
                             return;
                         }
-                        else if (cssblock.search('@keyframes') > -1 || cssblock.search('@-webkit-keyframes') > -1) {
+                        else if ( cssblock.search('@keyframes') > -1 || cssblock.search('@-webkit-keyframes') > -1 ) {
                             /* Keyframes Declaration */
                             /* Don't proceed until to do complete */
                             return;
                         }
-                        else if (cssblock.search('@font-face') > -1) {
+                        else if ( cssblock.search('@font-face') > -1 ) {
                             /* Font Face Declaration */
                             /* Don't proceed until to do complete */
                             return;
@@ -231,15 +249,15 @@
     }
 
     /* Creating CSSList Objects */
-    var CSSRuleList = function() {
+    var CSSRuleList = function () {
         this.length = 0;
 
         return this;
     }
 
     CSSRuleList.prototype = {
-        push: function(obj) {
-            this[this.length] = obj;
+        push : function (obj) {
+            this[ this.length ] = obj;
             this.length = (this.length + 1);
 
             return this;
@@ -247,7 +265,7 @@
     }
 
     /* Creating CSSStyle Object */
-    var CSSStyleRule = function(csstring, selector) {
+    var CSSStyleRule = function (csstring, selector) {
         this.cssText = csstring;
         this.selector = selector;
 
@@ -261,7 +279,7 @@
 
     CSSStyleRule.prototype = {
         /* Style Parser */
-        parseStyles: function(render) {
+        parseStyles : function (render) {
             /* CSS Style Desclaration */
             var $rule = this, cssText = this.cssText, selector;
 
@@ -269,16 +287,16 @@
             selector = cssText.match(/[a-zA-Z\d\.\s+\,\-\:\(\)\#\*\[\]\=\"\']+\{/);
 
             /* Escape if no selector */
-            if (!selector) return;
+            if ( !selector ) return;
 
             /* Changing Selector Type */
             $rule.type = 'CSSStyleRule';
 
             /* Replacing Selector to get declaration list */
-            var cssdec = cssText.replace(selector[0], '').replace('}', '').replace(/\n+/g, '');
+            var cssdec = cssText.replace(selector[ 0 ], '').replace('}', '').replace(/\n+/g, '');
 
             /* Beautify Selector */
-            selector = selector[0].replace(/\s?\{/, '').replace(/\n/g, ' ');
+            selector = selector[ 0 ].replace(/\s?\{/, '').replace(/\n/g, ' ');
 
             /* Setting selector to cssrule selector */
             $rule.selector = selector;
@@ -286,29 +304,30 @@
             /* Getting Declarations with splitting ';' */
             cssdec = cssdec.replace(/\;\s+/, ';').split(';');
 
-            if (cssdec) {
+            if ( cssdec ) {
                 var declarations = $rule.styles;
 
                 /* Parsing Declarations */
                 foreach(cssdec, function (style) {
-                    if (style !== '') {
+                    if ( style !== '' ) {
                         /* Normalize White Space */
                         var style = style.replace(/\s+/g, ' ').replace(/\s+/, '');
 
                         /* Getting CSS Property */
                         var prop = style.match(/[\*a-zA-Z\-]+\:/);
 
-                        if (prop && prop.length > 0) {
+                        if ( prop && prop.length > 0 ) {
                             /* Removing Property from style to get value */
-                            var value = style.replace(prop[0], '').replace(/\s+/, '');
+                            var value = style.replace(prop[ 0 ], '').replace(/\s+/, '');
 
                             /* Removing Space and : from property */
-                            prop = prop[0].replace(/\s+/g, '').replace(':', '');
+                            prop = prop[ 0 ].replace(/\s+/g, '').replace(':', '');
 
                             /* Add property to declaration list if contains patter and tell to proceed */
-                            if (value.search(/\%\(/) > -1 && value.search(/\)\%/)) {
+                            if ( value.search(/\%\(/) > -1 && value.search(/\)\%/) ) {
                                 $rule.cstyle.push(prop, value);
-                            } else {
+                            }
+                            else {
                                 $rule.styles.push(prop, value);
                             }
                         }
@@ -316,13 +335,13 @@
                 });
 
                 /* CSSJs Parser */
-                if (render) {
+                if ( render ) {
                     $rule.render();
 
                     // Todo: Add oncheck support.
                 }
 
-                if (CSScriptExtractAll) {
+                if ( CSScriptExtractAll ) {
                     /* Increasing Performance */
                     var now = performance.now();
 
@@ -332,46 +351,47 @@
         },
 
         /* Style Renderer */
-        render: function() {
+        render      : function () {
             var $rule = this, $selector = this.selector, $scripts = this.cstyle;
 
-            var actions = ['focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change', 'hover'];
+            var actions = [ 'focus', 'blur', 'click', 'mouseenter', 'mouseleave', 'change', 'hover' ];
 
             /* If has pseudo, check the event type and listen the event */
-            if ($selector.search(':') > -1) {
+            if ( $selector.search(':') > -1 ) {
                 foreach(actions, function (pseudo) {
                     /* Escape if no match pseudo */
-                    if ($selector.search(pseudo) < 0) return;
+                    if ( $selector.search(pseudo) < 0 ) return;
 
                     /* Removing pseudo from selector */
                     $selector = $selector.replace(new RegExp('\\:' + pseudo, 'g'), '');
 
                     // Escape if selector is empty.
-                    if (!$selector || $selector === '' || $selector === ' ') return;
+                    if ( !$selector || $selector === '' || $selector === ' ' ) return;
 
                     // Validate selector.
                     var valid;
 
                     try {
                         valid = document.querySelectorAll($selector);
-                    } catch (err) {
+                    }
+                    catch ( err ) {
                         //console.error('Invalid selector: ' + $selector);
                     }
 
                     /* Return if selector is invalid */
-                    if (!valid) return;
+                    if ( !valid ) return;
 
-                    $($selector).each(function(i) {
+                    $($selector).each(function (i) {
                         /* Adding Selector to this element */
-                        this['_' + pseudo + 'Style'] = $rule;
+                        this[ '_' + pseudo + 'Style' ] = $rule;
 
                         /* Remove event listener if already defined */
-                        if (this._evcol) {
+                        if ( this._evcol ) {
                             $(this).unlisten('css' + pseudo);
                         }
 
                         /* Create new Listener */
-                        $(this).listen('css' + pseudo, pseudo, function() {
+                        $(this).listen('css' + pseudo, pseudo, function () {
                             applyStyles.call(this, i, '_' + pseudo + 'Style');
                         });
                     });
@@ -380,9 +400,9 @@
 
             /* Apply directly if no pseudo in selector */
             else {
-                if ($selector === '') return;
+                if ( $selector === '' ) return;
 
-                $($selector).each(function(i) {
+                $($selector).each(function (i) {
                     /* Adding Selector to this element */
                     this._regularStyle = $rule;
 
@@ -396,10 +416,10 @@
     };
 
     /* Function to apply styles */
-    var applyStyles = function(i, groupd, inline) {
-        var $this = this, $props = {}, hasprop, cstyles = this[groupd].cstyle, selector = this[groupd].selector;
+    var applyStyles = function (i, groupd, inline) {
+        var $this = this, $props = {}, hasprop, cstyles = this[ groupd ].cstyle, selector = this[ groupd ].selector;
 
-        foreach(cstyles, function(style) {
+        foreach(cstyles, function (style) {
             var key = style.property, value = style.value;
 
             var inlineScript = key === 'script' || key === 'scripts' ? true : false;
@@ -413,24 +433,27 @@
 
             var csscValues = value.match(/\%\([a-zA-Z\.\,\!\@\%\(\)\'\"\:\?\d\<\>\*\/\=\$\#\s\+\-\_\[\]\{\}\|\&\\]+\)\%/g);
 
-            if (csscValues) {
+            if ( csscValues ) {
                 foreach(csscValues, function (csscValue) {
                     var newValue;
 
                     var script = csscValue.replace(/\%\(/, '').replace(/\)\%/, '');
 
-                    if (inlineScript) {
-                        try { eval(script); } catch (err) {}
+                    if ( inlineScript ) {
+                        try { eval(script); }
+                        catch ( err ) {}
 
-                        delete $props[key];
+                        delete $props[ key ];
                     }
 
                     else {
-                        try { eval('newValue = ' + script); } catch (err) {}
+                        try { eval('newValue = ' + script); }
+                        catch ( err ) {}
 
-                        if (newValue !== undefined) {
+                        if ( newValue !== undefined ) {
                             value = value.replace(csscValue, newValue);
-                        } else {
+                        }
+                        else {
                             value = value.replace(csscValue, null);
                         }
                     }
@@ -438,23 +461,25 @@
             }
 
             /* Removing Scripts Parts */
-            if (!inlineScript) {
+            if ( !inlineScript ) {
                 hasprop = true;
 
                 try {
                     eval('value = ' + value);
-                } catch (err) {}
+                }
+                catch ( err ) {}
 
-                if (value !== undefined) {
-                    $props[key] = value;
-                } else {
-                    $props[key] = null;
+                if ( value !== undefined ) {
+                    $props[ key ] = value;
+                }
+                else {
+                    $props[ key ] = null;
                 }
             }
         });
 
-        if (hasprop) {
-            if (inline) {
+        if ( hasprop ) {
+            if ( inline ) {
                 $(this).css($props);
             }
 
@@ -466,7 +491,7 @@
                 var cssString = createCSS(selector + '[cssid="' + (this.getAttribute('cssid') || (CSSID + 1, CSSID++)) + '"]', $props);
 
                 /* If css ever generated, replace the old one */
-                if (this._oldcss && CSScriptCSS.search(this._oldcss) > -1) {
+                if ( this._oldcss && CSScriptCSS.search(this._oldcss) > -1 ) {
                     CSScriptCSS = CSScriptCSS.replace(this._oldcss, cssString);
                 }
 
@@ -492,17 +517,17 @@
     };
 
     /* Private Variables */
-    var PrivateVariables = function() { return this };
+    var PrivateVariables = function () { return this };
 
     PrivateVariables.prototype = {
-        push: function(key, value) {
-            this[key] = value;
+        push : function (key, value) {
+            this[ key ] = value;
         }
     }
 
     /* CSS String Maker */
-    var createCSS = function(selector, props) {
-        if (isString(selector) && isObject(props)) {
+    var createCSS = function (selector, props) {
+        if ( isString(selector) && isObject(props) ) {
             var str = '\n' + selector + ' { \n';
 
             foreach(props, function (key, value) {
@@ -517,27 +542,27 @@
     };
 
     /* Creating CSSRule Object */
-    var CSSStyleList = function() {
+    var CSSStyleList = function () {
         return this;
     }
     CSSStyleList.prototype = {
-        push: function(key, value) {
-            this[key] = value;
+        push : function (key, value) {
+            this[ key ] = value;
 
             return this;
         }
     }
 
     /* Creating CSSRule Object */
-    var CSScriptStyle = function() {
+    var CSScriptStyle = function () {
         this.render = false;
         this.length = 0;
 
         return this;
     }
     CSScriptStyle.prototype = {
-        push: function(key, value) {
-            this[this.length] = { property: key, value: value };
+        push : function (key, value) {
+            this[ this.length ] = { property : key, value : value };
             this.length++;
 
             return this;
@@ -545,7 +570,7 @@
     }
 
     /* Creating CSSMediaQueryRule Object */
-    var CSSMediaRule = function(csstring, query) {
+    var CSSMediaRule = function (csstring, query) {
         this.cssText = csstring;
         this.queries = query;
         this.rules = new CSSRuleList();
@@ -554,7 +579,7 @@
     }
 
     CSSMediaRule.prototype = {
-        parseMedia: function() {
+        parseMedia : function () {
             var qrwrap = $('<style id="mqr-parser" type="text/css">').appendTo('head');
             var qrhold = $('<div mqr-holder>').appendTo('body');
 
@@ -564,7 +589,7 @@
 
             qrwrap.html(qrhQuery);
 
-            if (qrhold.width() === 123) {
+            if ( qrhold.width() === 123 ) {
                 var csstyle = new CSSStylesheet('local-media', this.cssText.replace(this.queries, ''));
                 csstyle.parseRules();
             }
@@ -577,7 +602,7 @@
     }
 
     /* Creating CSSKeyframeRule Object */
-    var CSSKeyframeRule = function(csstring, selector) {
+    var CSSKeyframeRule = function (csstring, selector) {
         this.cssText = csstring;
         this.selector = selector;
         this.styles = new CSSStyleList();
@@ -586,7 +611,7 @@
     }
 
     /* Creating CSSFontRule Object */
-    var CSSFontRule = function(csstring, selector) {
+    var CSSFontRule = function (csstring, selector) {
         this.cssText = csstring;
         this.selector = selector;
         this.styles = new CSSStyleList();
@@ -595,9 +620,9 @@
     }
 
     /* Animation to replace DOM Mutaion event */
-    var muframe  = '@-webkit-keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
-    muframe     += '@keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
-    muframe     += 'body *:not([mqr-holder]) { -webkit-animation: dommutationlistener 0s linear; animation: dommutationlistener 0s linear; }';
+    var muframe = '@-webkit-keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
+    muframe += '@keyframes dommutationlistener { 0% { opacity: 1; } 100% { opacity: 1; } }\n';
+    muframe += 'body *:not([mqr-holder]) { -webkit-animation: dommutationlistener 0s linear; animation: dommutationlistener 0s linear; }';
 
     /* CSScript Variable Holders */
     window.CSScriptVariables = {};
@@ -612,11 +637,11 @@
     var CSScriptTime = new Date().getTime();
 
     /* Config does all css parsed or only that contains CSScript */
-    if (!window.CSScriptExtractAll) {
+    if ( !window.CSScriptExtractAll ) {
         window.CSScriptExtractAll = false;
     }
 
-    if (!window.CSScriptAutoRender) {
+    if ( !window.CSScriptAutoRender ) {
         window.CSScriptAutoRender = false;
     }
 
@@ -625,11 +650,11 @@
     var RgmBlock = /[a-zA-Z\d\%\#\*\[\]\=\"\'\d\s+\.\,\:\-\_\(\)]+\{\s+[a-zA-Z\!\/\d\:\s?;\-\%\#\'\"\.\,\(\)\*\+\{\<\>\=\@\?\$\_\[\]\|\&\\]+\}/g;
 
     /* Re-render styles when window resized */
-    var windowresize = setTimeout(function() {}, 200);
-    window.addEventListener('resize', function() {
+    var windowresize = setTimeout(function () {}, 200);
+    window.addEventListener('resize', function () {
         clearTimeout(windowresize);
 
-        windowresize = setTimeout(function() {
+        windowresize = setTimeout(function () {
             foreach(CollectedCSScripts, function (rule) {
                 rule.render();
             });

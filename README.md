@@ -183,6 +183,7 @@ https://github.com/mahdaen/csscript
 
 
 ## Release History
+* 2015-04-25        v0.3.3      "Fixing unminify."
 * 2015-04-25        v0.3.2      "Fixing performance on chrome."
 * 2015-04-25        v0.3.1      "Adding performance to fix error in safari."
 * 2015-04-24        v0.3.0      "Adding support to render minified css."
