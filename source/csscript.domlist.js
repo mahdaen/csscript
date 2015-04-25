@@ -2,7 +2,7 @@
     'use strict';
 
     if (!window.performance) {
-        var performance = {
+        window.performance = {
             now: function() {
                 return new Date().getMilliseconds();
             }
