@@ -362,9 +362,15 @@
 
             /* If has pseudo, check the event type and listen the event */
             if ( $selector.search(':') > -1 ) {
+                var hasaction = false;
+
                 foreach(actions, function (pseudo) {
                     /* Escape if no match pseudo */
-                    if ( $selector.search(pseudo) < 0 ) return;
+                    if ( $selector.search(pseudo) < 0 ) {
+                        return;
+                    } else {
+                        hasaction = true;
+                    }
 
                     /* Removing pseudo from selector */
                     $selector = $selector.replace(new RegExp('\\:' + pseudo, 'g'), '');
@@ -400,6 +406,25 @@
                         });
                     });
                 });
+
+                if (!hasaction) {
+                    // Validating selector.
+                    var valid;
+
+                    try {
+                        valid = document.querySelectorAll($selector)
+                    } catch (err) {}
+
+                    if (valid) {
+                        $($selector).each(function (i) {
+                            /* Adding Selector to this element */
+                            this._regularStyle = $rule;
+
+                            /* Rendering declarations */
+                            applyStyles.call(this, i, '_regularStyle');
+                        });
+                    }
+                }
             }
 
             /* Apply directly if no pseudo in selector */

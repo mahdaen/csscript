@@ -1,6 +1,6 @@
 {
     "name": "csscript",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "CSS inline script runner. Use javascript pattern to define css value.",
     "keywords": [
         "cssscript",

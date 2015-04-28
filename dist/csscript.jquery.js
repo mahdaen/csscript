@@ -139,21 +139,32 @@
         },
         render: function() {
             var $rule = this, $selector = this.selector, actions = (this.cstyle, [ "focus", "blur", "click", "mouseenter", "mouseleave", "change", "hover" ]);
-            if ($selector.search(":") > -1) foreach(actions, function(pseudo) {
-                if (!($selector.search(pseudo) < 0) && ($selector = $selector.replace(new RegExp("\\:" + pseudo, "g"), ""), 
-                $selector && "" !== $selector && " " !== $selector)) {
+            if ($selector.search(":") > -1) {
+                var hasaction = !1;
+                if (foreach(actions, function(pseudo) {
+                    if (!($selector.search(pseudo) < 0) && (hasaction = !0, $selector = $selector.replace(new RegExp("\\:" + pseudo, "g"), ""), 
+                    $selector && "" !== $selector && " " !== $selector)) {
+                        var valid;
+                        try {
+                            valid = document.querySelectorAll($selector);
+                        } catch (err) {}
+                        valid && $($selector).each(function(i) {
+                            this["_" + pseudo + "Style"] = $rule, this._evcol && $(this).unlisten("css" + pseudo), 
+                            $(this).listen("css" + pseudo, pseudo, function() {
+                                applyStyles.call(this, i, "_" + pseudo + "Style");
+                            });
+                        });
+                    }
+                }), !hasaction) {
                     var valid;
                     try {
                         valid = document.querySelectorAll($selector);
                     } catch (err) {}
                     valid && $($selector).each(function(i) {
-                        this["_" + pseudo + "Style"] = $rule, this._evcol && $(this).unlisten("css" + pseudo), 
-                        $(this).listen("css" + pseudo, pseudo, function() {
-                            applyStyles.call(this, i, "_" + pseudo + "Style");
-                        });
+                        this._regularStyle = $rule, applyStyles.call(this, i, "_regularStyle");
                     });
                 }
-            }); else {
+            } else {
                 if ("" === $selector) return;
                 $($selector).each(function(i) {
                     this._regularStyle = $rule, applyStyles.call(this, i, "_regularStyle");

@@ -183,6 +183,7 @@ https://github.com/mahdaen/csscript
 
 
 ## Release History
+* 2015-04-25        v0.3.4      "Fixing issues when using pseudos."
 * 2015-04-25        v0.3.4      "Fixing underscore '__' selector."
 * 2015-04-25        v0.3.3      "Fixing unminify."
 * 2015-04-25        v0.3.2      "Fixing performance on chrome."
